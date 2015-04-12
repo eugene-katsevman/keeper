@@ -2,6 +2,8 @@
 import tasks
 import sys
 import settings
+import argparse
+
 
 
 taskpool = tasks.load_all();
@@ -11,4 +13,6 @@ taskpool.tasks.sort(key = lambda task : task.length)
 for task in taskpool.tasks:
     print task
     
-print "total time:", sum([task.length for task in taskpool.tasks if task.length is not None])
+total_time = sum([task.length for task in taskpool.tasks if task.length is not None])    
+print "total time:", total_time
+print "days:", total_time / 10

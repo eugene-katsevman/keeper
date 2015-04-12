@@ -32,8 +32,10 @@ class TaskList:
             line =  line.rstrip()
             if line:
                 if line.endswith(':'):
-                    current_section = line.strip()[:-1]
+                    current_section = line.strip()[:-1]                    
                 else:
+                    if not line.startswith(' '):
+                        current_section = None
                     if current_section != 'done':
                         attributes = self.extract_attributes(current_section, line)
                         

@@ -6,11 +6,12 @@ import re
 import datetime
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, at = None):
+    def __init__(self, name = "", length = 1, topic = None, at = None, till = None):
         self.name = name
         self.length = length
         self.topic = topic
         self.at = at
+        self.till = till
         
     def planned_time_to_str(self):
         if self.length is None:
@@ -56,7 +57,10 @@ class TaskList:
                 
         def looks_like_date(s):
             return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d', s)
-            
+
+        def looks_like_till_date(s):
+            return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d', s)
+
         def looks_like_length(s):
             return [] != re.findall('\d+[hm]|\?[hm]', s)            
             
@@ -75,8 +79,14 @@ class TaskList:
                     format = '%d.%m.%Y'
                     date_object = datetime.datetime.strptime(attr, format)
                     result['at'] = date_object
+                    
                 elif looks_like_length(attr):
                     result['length'] = get_length(attr)              
+                elif looks_line_till_date(attr):
+                    format = '%d.%m.%Y'
+                    date_object = datetime.datetime.strptime(attr[1:], format)
+                    result['till'] = date_object                                      
+                    
         return result
         
     def today(self):

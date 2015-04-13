@@ -23,4 +23,10 @@ for task in taskpool.today():
 print "14.04.2015"
 for task in taskpool.strict_at(datetime(2015, 4, 14)):
     print task
-    
+
+print "<16.04.2015"
+till_tasks = taskpool.till(datetime(2015, 4, 16)) 
+for task in till_tasks:
+    print task
+
+print sum([task.length for task in till_tasks if task.length is not None])

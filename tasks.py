@@ -82,7 +82,7 @@ class TaskList:
                     
                 elif looks_like_length(attr):
                     result['length'] = get_length(attr)              
-                elif looks_line_till_date(attr):
+                elif looks_like_till_date(attr):
                     format = '%d.%m.%Y'
                     date_object = datetime.datetime.strptime(attr[1:], format)
                     result['till'] = date_object                                      
@@ -94,7 +94,10 @@ class TaskList:
         
     def strict_at(self, date):
         return [task for task in self.tasks if task.at == date]
-        
+    
+    def till(self, date):
+        return [task for task in self.tasks if task.till != None and task.till<=date] + self.strict_at(date)
+            
 def load_all():
     taskpool = TaskList()
     for filename in os.listdir('./lists'):

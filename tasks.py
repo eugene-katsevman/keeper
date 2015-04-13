@@ -4,6 +4,7 @@ import os.path
 import os
 import re
 import datetime
+import os.path
 
 class Task:
     def __init__(self, name = "", length = 1, topic = None, at = None, till = None):
@@ -100,6 +101,7 @@ class TaskList:
             
 def load_all():
     taskpool = TaskList()
-    for filename in os.listdir('./lists'):
-        taskpool.load_from_file('./lists/'+filename)
+    lists_dir = os.path.dirname(__file__)+"/lists/"
+    for filename in os.listdir(lists_dir):
+        taskpool.load_from_file(lists_dir+filename)
     return taskpool

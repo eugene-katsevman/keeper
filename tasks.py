@@ -1,13 +1,16 @@
+# -*- coding:utf8 -*-
 import sys
 import os.path
 import os
 import re
+import datetime
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None):
+    def __init__(self, name = "", length = 1, topic = None, at = None):
         self.name = name
         self.length = length
         self.topic = topic
+        self.at = at
         
     def planned_time_to_str(self):
         if self.length is None:
@@ -40,22 +43,48 @@ class TaskList:
                         attributes = self.extract_attributes(current_section, line)
                         
                         self.tasks.append(Task(**attributes))    
-                        
+
+                            
     def extract_attributes(self, topic, line):
+        def get_length(s):
+            if '?' in time:
+                return None
+            elif time.endswith('h'):            
+                return int(time[:-1])   
+            elif time.endswith('m'):
+                return float(time[:-1]) / 60
+                
+        def looks_like_date(s):
+            return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d', s)
+            
+        def looks_like_length(s):
+            return [] != re.findall('\d+[hm]|\?[hm]', s)            
+            
         result = dict()
         result['topic'] = topic
         result['name'] = line.strip()
         times = re.findall('\d+[hm]|\?[hm]', line)
         if times:
             time = times[0]
-            if '?' in time:
-                result['length'] = None
-            elif time.endswith('h'):            
-                result['length'] = int(time[:-1])   
-            elif time.endswith('m'):
-                result['length'] = float(time[:-1]) / 60
-        return result    
-
+            result['length'] = get_length(time)
+        attribute_line = re.findall('\[(.*)\]', line)
+        if attribute_line:
+            attributes = [attr.strip() for attr in attribute_line[0].split(',')]
+            for attr in attributes:
+                if looks_like_date(attr):
+                    format = '%d.%m.%Y'
+                    date_object = datetime.datetime.strptime(attr, format)
+                    result['at'] = date_object
+                elif looks_like_length(attr):
+                    result['length'] = get_length(attr)              
+        return result
+        
+    def today(self):
+        return [task for task in self.tasks if task.topic in ["сегодня", "today"]]
+        
+    def strict_at(self, date):
+        return [task for task in self.tasks if task.at == date]
+        
 def load_all():
     taskpool = TaskList()
     for filename in os.listdir('./lists'):

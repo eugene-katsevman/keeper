@@ -8,6 +8,7 @@ from datetime import datetime
 
 taskpool = tasks.load_all();
 
+"""
 taskpool.tasks.sort(key = lambda task : task.length)
 
 for task in taskpool.tasks:
@@ -30,3 +31,5 @@ for task in till_tasks:
     print task
 
 print sum([task.length for task in till_tasks if task.length is not None])
+"""
+taskpool.estimate()

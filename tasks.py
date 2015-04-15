@@ -13,6 +13,11 @@ class Task:
         self.topic = topic
         self.at = at
         self.till = till
+        self.upper_limit = None
+        if self.at is not None:
+            self.upper_limit = self.at
+        elif self.till is not None:
+            self.upper_limit = self.till
         
     def planned_time_to_str(self):
         if self.length is None:
@@ -86,7 +91,8 @@ class TaskList:
                 elif looks_like_till_date(attr):
                     format = '%d.%m.%Y'
                     date_object = datetime.datetime.strptime(attr[1:], format)
-                    result['till'] = date_object                                      
+                    result['till'] = date_object
+
                     
         return result
         
@@ -98,6 +104,31 @@ class TaskList:
     
     def till(self, date):
         return [task for task in self.tasks if task.till != None and task.till<=date] + self.strict_at(date)
+
+    def estimate(self, date_from = None):
+        if date_from is None:
+            date_from =  datetime.datetime.now()
+
+
+        limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
+        limited_tasks.sort(key = lambda task : task.upper_limit)
+        overdue = set()
+        fuckups = set()
+        now = date_from
+        budget = datetime.timedelta()
+        for task in limited_tasks:
+            status = "nominal"
+            if task.upper_limit<date_from:
+                status = "overdue"
+            else:
+                budget += task.upper_limit - now
+                budget -= datetime.timedelta(hours=task.length)
+                if budget < datetime.timedelta():
+                    status = "possible fuckup"
+                now = task.upper_limit
+            print status, task
+
+
             
 def load_all():
     taskpool = TaskList()

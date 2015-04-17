@@ -11,11 +11,16 @@ from datetime import datetime
 
 taskpool = tasks.load_all()
 
+def check(arg):    
+    taskpool.check()
 
+def scheduled(arg):
+    taskpool.scheduled()
+        
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
 parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
-parser_check.set_defaults(func=taskpool.check)
+parser_check.set_defaults(func=check)
 
 parser_scheduled = subparsers.add_parser('scheduled', help='Show scheduled tasks')
 parser_scheduled.set_defaults(func=taskpool.scheduled)

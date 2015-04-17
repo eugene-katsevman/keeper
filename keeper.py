@@ -9,19 +9,17 @@ from datetime import datetime
 
 
 
-
-def check(args):
-    """Эта функция будет вызвана для создания пользователя"""
-    #скучные проверки корректности данных, с ними разберемся позже
-    taskpool = tasks.load_all();
-    taskpool.estimate()
+taskpool = tasks.load_all()
 
 
-"""Настройка argparse"""
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
 parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
-parser_check.set_defaults(func=check)
+parser_check.set_defaults(func=taskpool.check)
+
+parser_scheduled = subparsers.add_parser('scheduled', help='Show scheduled tasks')
+parser_scheduled.set_defaults(func=taskpool.scheduled)
+
 #parser_append.add_argument('username', help='Name of user')
 #parser_append.add_argument('age', help='Age of user')
 

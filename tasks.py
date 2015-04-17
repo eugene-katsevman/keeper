@@ -127,15 +127,16 @@ class TaskList:
             time_from += datetime.timedelta(hours=1)
         return result
 
-    def estimate(self, date_from = None):
+    def check(self, date_from = None):
         if date_from is None:
             date_from =  datetime.datetime.now()
 
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
         unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None]
         limited_tasks.sort(key = lambda task : task.upper_limit)
-        now = date_from
+
         budget = datetime.timedelta()
+        now = date_from
         for task in limited_tasks:
             status = "nominal"
             if task.upper_limit<date_from:
@@ -158,6 +159,14 @@ class TaskList:
         else:
             print budget - unbound_time, " of unassigned time"
             print "NOMINAL"
+
+    def scheduled(self, date_from = None):
+        if date_from is None:
+            date_from =  datetime.datetime.now()
+        limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
+        limited_tasks.sort(key = lambda task : task.upper_limit)
+        for task in limited_tasks:
+            print task
             
 def load_all():
     taskpool = TaskList()

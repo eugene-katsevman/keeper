@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding:utf8 -*-
+# PYTHON_ARGCOMPLETE_OK
 import tasks
 import sys
 import settings
@@ -6,7 +8,29 @@ import argparse
 from datetime import datetime
 
 
-taskpool = tasks.load_all();
+
+
+def check(args):
+    """Эта функция будет вызвана для создания пользователя"""
+    #скучные проверки корректности данных, с ними разберемся позже
+    taskpool = tasks.load_all();
+    taskpool.estimate()
+
+
+"""Настройка argparse"""
+parser = argparse.ArgumentParser(description='console timekeeper')
+subparsers = parser.add_subparsers()
+parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
+parser_check.set_defaults(func=check)
+#parser_append.add_argument('username', help='Name of user')
+#parser_append.add_argument('age', help='Age of user')
+
+
+args =  parser.parse_args()
+
+
+args.func(args)
+
 
 """
 taskpool.tasks.sort(key = lambda task : task.length)
@@ -32,4 +56,3 @@ for task in till_tasks:
 
 print sum([task.length for task in till_tasks if task.length is not None])
 """
-taskpool.estimate()

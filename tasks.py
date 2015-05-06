@@ -1,4 +1,4 @@
-# -*- coding:utf8 -*-
+# -*- coding:utf-8 -*-
 import sys
 import os.path
 import os
@@ -10,10 +10,10 @@ import os.path
 def get_length(s):
     if '?' in s:
         return None
-    elif s.endswith('h'):
-        return int(s[:-1])
-    elif s.endswith('m'):
-        return float(s[:-1]) / 60
+    elif s.endswith('h') or s.endswith('ч'):
+        return float(re.findall('\d*\.?\d+', s)[0])
+    elif s.endswith('m') or s.endswith('м'):
+        return float(re.findall('\d*\.?\d+', s)[0]) / 60
 
 def looks_like_date(s):
     return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d', s)
@@ -29,13 +29,18 @@ def looks_like_till_date(s):
     return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d', s)
 
 def looks_like_length(s):
-    return [] != re.findall('\d+[hm]|\?[hm]', s)
+    return [] != re.findall('\d+[hmчм]|\?[hmчм]', s)
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, at = None, till = None):
+    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None):
         self.name = name
         self.length = length
         self.topic = topic
+        
+        self.topics = topics
+        if topic and not topics:
+            self.topics.append(topic)
+            
         self.at = at
         self.till = till
         self.upper_limit = None
@@ -66,46 +71,51 @@ class TaskList:
         for line in open(filename).readlines():        
             line =  line.rstrip()
             if line:
-                if line.endswith(':'):
+                if line.strip().startswith('//') or line.strip().startswith('#'):
+                    pass
+                elif line.endswith(':'):
                     current_section = line.strip()[:-1]                    
                 else:
                     if not line.startswith(' '):
                         current_section = None
-                    if current_section != 'done':
-                        attributes = self.extract_attributes(current_section, line)
-                        
+                    if current_section not in ['done', 'debts']:
+                        attributes = self.extract_attributes(line)
+                        attributes['topic'] = current_section
+                        attributes['topics'] = [os.path.basename(filename).split('.')[0]]
+                        if current_section:
+                            attributes['topics'].append(current_section)
                         self.tasks.append(Task(**attributes))    
 
+    
     @staticmethod
-    def extract_attributes(topic, line):
-        result = dict()
-        result['topic'] = topic
-        result['name'] = line.strip()
-        times = re.findall('\d+[hm]|\?[hm]', line)
-        if times:
-            time = times[0]
-            result['length'] = get_length(time)
-        attribute_line = re.findall('\[(.*)\]', line)
-        if attribute_line:
-            attributes = [attr.strip() for attr in attribute_line[0].split(',')]
-            for attr in attributes:
-                if looks_like_datetime(attr):
-                    result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')
-                if looks_like_date(attr):
-                    result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y')
-                elif looks_like_length(attr):
-                    result['length'] = get_length(attr)              
-                elif looks_like_till_datetime(attr):
-                    result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y %H:%M')
-                elif looks_like_till_date(attr):
-                    result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y')
+    def extract_attributes(line):
+        try:
+            result = dict()
+            result['name'] = line.strip()
+            times = re.findall('\d+[hm]|\?[hm]', line)
+            if times:
+                time = times[0]
+                result['length'] = get_length(time)
+            attribute_line = re.findall('\[(.*)\]', line)
+            if attribute_line:
+                attributes = [attr.strip() for attr in attribute_line[0].split(',')]
+                for attr in attributes:
+                    if looks_like_datetime(attr):
+                        result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')
+                    elif looks_like_date(attr):
+                        result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y')
+                    elif looks_like_length(attr):
+                        result['length'] = get_length(attr)              
+                    elif looks_like_till_datetime(attr):
+                        result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y %H:%M')
+                    elif looks_like_till_date(attr):
+                        result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y')
+            return result                        
+        except Exception as e:
+            raise Exception("error while parsing {} of topic {}".format(line, topic))
 
-
-                    
-        return result
-        
     def today(self):
-        return [task for task in self.tasks if task.topic in ["сегодня", "today"]]
+        return [task for task in self.tasks if task.upper_limit is not None and task.upper_limit.date()<=datetime.date.today()]
         
     def strict_at(self, date):
         return [task for task in self.tasks if task.at == date]
@@ -177,3 +187,7 @@ def load_all():
 
 if __name__== "__main__":
      print TaskList().special_time(datetime.datetime.now(), datetime.datetime.now() + datetime.timedelta(days = 1)).seconds/3600
+     
+     print looks_like_length('100ч')
+     print "100ч"[:-1]
+     print get_length('100ч')

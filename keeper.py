@@ -1,13 +1,11 @@
 #!/usr/bin/python
-# -*- coding:utf8 -*-
+# -*- coding:utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 import tasks
 import sys
 import settings
 import argparse
 from datetime import datetime
-
-
 
 taskpool = tasks.load_all()
 
@@ -16,46 +14,42 @@ def check(arg):
 
 def scheduled(arg):
     taskpool.scheduled()
+
+def list_topic(arg):
+    for task in taskpool.tasks:
+        if not args.topic or set(task.topics).intersection(set(arg.topic)):
+            print task
         
+
+def today(arg):
+    for task in taskpool.today():
+        print task
+    
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
 parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
 parser_check.set_defaults(func=check)
 
 parser_scheduled = subparsers.add_parser('scheduled', help='Show scheduled tasks')
-parser_scheduled.set_defaults(func=taskpool.scheduled)
+parser_scheduled.set_defaults(func=scheduled)
+
+parser_list = subparsers.add_parser('list', help='List all tasks')
+parser_list.add_argument("topic", nargs="*")
+parser_list.set_defaults(func=list_topic, topic = None)
+
+
+parser_today = subparsers.add_parser('today', help='Lists tasks for today')
+parser_today.set_defaults(func=today)
+
+
 
 #parser_append.add_argument('username', help='Name of user')
 #parser_append.add_argument('age', help='Age of user')
 
-
-args =  parser.parse_args()
-
+if (len(sys.argv) < 2):
+    args = parser.parse_args(['check'])
+else:
+    args = parser.parse_args()
+    
 
 args.func(args)
-
-
-"""
-taskpool.tasks.sort(key = lambda task : task.length)
-
-for task in taskpool.tasks:
-    print task
-    
-total_time = sum([task.length for task in taskpool.tasks if task.length is not None])    
-print "total time:", total_time
-print "days:", total_time / 10
-print "today:"
-for task in taskpool.today():
-    print task
-    
-print "14.04.2015"
-for task in taskpool.strict_at(datetime(2015, 4, 14)):
-    print task
-
-print "<16.04.2015"
-till_tasks = taskpool.till(datetime(2015, 4, 16)) 
-for task in till_tasks:
-    print task
-
-print sum([task.length for task in till_tasks if task.length is not None])
-"""

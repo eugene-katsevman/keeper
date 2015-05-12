@@ -35,6 +35,7 @@ parser_scheduled.set_defaults(func=scheduled)
 
 parser_list = subparsers.add_parser('list', help='List all tasks')
 parser_list.add_argument("topic", nargs="*")
+parser_list.add_argument("--no-total", action="store_true")
 parser_list.set_defaults(func=list_topic, topic = None)
 
 

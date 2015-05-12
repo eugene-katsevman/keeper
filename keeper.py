@@ -19,7 +19,7 @@ def list_topic(arg):
     tasklist = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
     for task in tasklist:
         print task
-    print "Total: ", sum([float(task.length) for task in tasklist])
+    print "Total: ", sum([task.length for task in tasklist if task.length])
 
 def today(arg):
     for task in taskpool.today():

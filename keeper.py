@@ -16,10 +16,10 @@ def scheduled(arg):
     taskpool.scheduled()
 
 def list_topic(arg):
-    for task in taskpool.tasks:
-        if not args.topic or set(task.topics).intersection(set(arg.topic)):
-            print task
-        
+    tasklist = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
+    for task in tasklist:
+        print task
+    print "Total: ", sum([float(task.length) for task in tasklist])
 
 def today(arg):
     for task in taskpool.today():

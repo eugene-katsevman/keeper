@@ -16,11 +16,13 @@ def scheduled(arg):
     taskpool.scheduled()
 
 def list_topic(arg):
-    tasklist = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
-    for task in tasklist:
+    task_list = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
+    if args.topic:
+        task_list += [task for task in taskpool.special_tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
+    for task in task_list:
         print task
     if not args.no_total:
-        print "Total: ", sum([task.length for task in tasklist if task.length])
+        print "Total: ", sum([task.length for task in task_list if task.length])
 
 def today(arg):
     for task in taskpool.today():
@@ -36,17 +38,13 @@ parser_scheduled.set_defaults(func=scheduled)
 
 parser_list = subparsers.add_parser('list', help='List all tasks')
 parser_list.add_argument("topic", nargs="*")
-parser_list.add_argument("--no-total", action="store_true")
+parser_list.add_argument("--no-total", action="store_true", help = "do not count total work hours")
 parser_list.set_defaults(func=list_topic, topic = None)
 
 
 parser_today = subparsers.add_parser('today', help='Lists tasks for today')
 parser_today.set_defaults(func=today)
 
-
-
-#parser_append.add_argument('username', help='Name of user')
-#parser_append.add_argument('age', help='Age of user')
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

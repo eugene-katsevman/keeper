@@ -1,10 +1,9 @@
 # -*- coding:utf-8 -*-
-import sys
-import os.path
 import os
 import re
 import datetime
 import os.path
+from settings import *
 
 
 def get_length(s):
@@ -63,30 +62,33 @@ class Task:
 class TaskList:
     def __init__(self, filename = None):
         self.tasks = []
+        self.special_tasks = []
         if filename:
             self.load_from_file(filename)
         
     def load_from_file(self, filename):
         current_section = None
         for line in open(filename).readlines():        
-            line =  line.rstrip()
+            line = line.rstrip()
             if line:
                 if line.strip().startswith('//') or line.strip().startswith('#'):
                     pass
                 elif line.endswith(':'):
-                    current_section = line.strip()[:-1]                    
+                    current_section = line.strip()[:-1]
                 else:
                     if not line.startswith(' '):
                         current_section = None
-                    if current_section not in ['done', 'debts']:
-                        attributes = self.extract_attributes(line)
-                        attributes['topic'] = current_section
-                        attributes['topics'] = [os.path.basename(filename).split('.')[0]]
-                        if current_section:
-                            attributes['topics'].append(current_section)
-                        self.tasks.append(Task(**attributes))    
+                    attributes = self.extract_attributes(line)
+                    attributes['topic'] = current_section
+                    attributes['topics'] = [os.path.basename(filename).split('.')[0]]
+                    if current_section:
+                        attributes['topics'].append(current_section)
 
-    
+                    if current_section not in IGNORED_SECTIONS:
+                        self.tasks.append(Task(**attributes))
+                    else:
+                        self.special_tasks.append(Task(**attributes))
+
     @staticmethod
     def extract_attributes(line):
         try:

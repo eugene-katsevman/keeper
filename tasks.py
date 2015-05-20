@@ -3,8 +3,9 @@ import os
 import re
 import datetime
 import os.path
-from settings import *
+import timespans
 
+from settings import *
 
 def get_length(s):
     if '?' in s:
@@ -20,6 +21,9 @@ def looks_like_date(s):
 def looks_like_datetime(s):
     return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
 
+def looks_like_time(s):
+    return [] != re.findall('^\d\d?:\d\d?', s)
+
 def looks_like_till_datetime(s):
     return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
 
@@ -30,12 +34,69 @@ def looks_like_till_date(s):
 def looks_like_length(s):
     return [] != re.findall('\d+[hmчм]|\?[hmчм]', s)
 
+def looks_like_periodic(s):
+    return s.startswith("+")
+
+
+def days(datefrom, dateto):
+    datenow = datefrom
+    while datenow < dateto:
+        yield datenow
+        datenow += datetime.timedelta(days = 1)
+
+
+class Period(object):
+    def __init__(self, specification = None, task = None):
+
+        self.specification = specification[1:]
+        parts = self.specification.strip().split()
+        self.start_time = None
+        self.specs = []
+        for part in parts:
+            if looks_like_time(part):
+                self.start_time = datetime.datetime.strptime(part, '%H:%M').time()
+            else:
+                self.specs.append(part)
+
+        print self.specs
+        print self.start_time
+        self.task = task
+
+    def set_task(self, task):
+        self.task = task
+
+    def has_day(self, day):
+        """
+        :type day:datetime.date
+        :param day:
+        :return:
+        """
+        result = not self.specs or \
+            "понедельник" in self.specs and day.weekday() == 0 or \
+            "вторник" in self.specs and day.weekday() == 1 or \
+            "среда" in self.specs and day.weekday() == 2 or \
+            "четверг" in self.specs and day.weekday() == 3 or \
+            "пятница" in self.specs and day.weekday() == 4 or \
+            "суббота" in self.specs and day.weekday() == 5 or \
+            "воскресенье" in self.specs and day.weekday() == 6
+        print day, result
+        return result
+
+    def get_timespan_for_day(self, day):
+        _from = datetime.datetime.combine(day, self.start_time)
+        return timespans.TimeSpan(_from = _from,
+                                  _to = _from + datetime.timedelta(hours = self.task.length))
+
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None):
+    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None):
         self.name = name
         self.length = length
         self.topic = topic
-        
+        self.periodics = periodics
+        if self.periodics:
+            for period in self.periodics:
+                period.set_task(self)
+
         self.topics = topics
         if topic and not topics:
             self.topics.append(topic)
@@ -53,7 +114,21 @@ class Task:
             return 'unknown'
         else:
             return str(self.length) + 'h'
-    
+
+
+    def generate_timespanset(self, start, end):
+        if not self.periodics:
+            return timespans.TimeSpanSet(self.at, self.upper_limit)
+        spans = []
+        for period in self.periodics:
+            for day in days(start.date() - datetime.timedelta(days=1), end.date()):
+                if period.has_day(day):
+                    spans.append(period.get_timespan_for_day(day))
+        spanset = (timespans.TimeSpanSet(timespans = spans).converge()
+                  - timespans.TimeSpanSet(_from=None, _to=start)) \
+                  - timespans.TimeSpanSet(_from=end, _to=None)
+        return spanset.converge()
+
     def __str__(self):
 
         return "{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
@@ -68,11 +143,18 @@ class TaskList:
         
     def load_from_file(self, filename):
         current_section = None
+        in_comment = False
         for line in open(filename).readlines():        
             line = line.rstrip()
             if line:
+                if in_comment and "*/" in line:
+                  in_comment = False
+                if in_comment:
+                    continue
                 if line.strip().startswith('//') or line.strip().startswith('#'):
                     pass
+                elif line.strip().startswith("/*"):
+                    in_comment = True
                 elif line.endswith(':'):
                     current_section = line.strip()[:-1]
                 else:
@@ -101,6 +183,7 @@ class TaskList:
             attribute_line = re.findall('\[(.*)\]', line)
             if attribute_line:
                 attributes = [attr.strip() for attr in attribute_line[0].split(',')]
+                periodics = []
                 for attr in attributes:
                     if looks_like_datetime(attr):
                         result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')
@@ -112,9 +195,12 @@ class TaskList:
                         result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y %H:%M')
                     elif looks_like_till_date(attr):
                         result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y')
+                    elif looks_like_periodic(attr):
+                        periodics.append(Period(attr))
+                result['periodics'] = periodics
             return result                        
         except Exception as e:
-            raise Exception("error while parsing {} of topic {}".format(line, topic))
+            raise Exception("error while parsing {}".format(line))
 
     def today(self):
         return [task for task in self.tasks if task.upper_limit is not None and task.upper_limit.date()<=datetime.date.today()]

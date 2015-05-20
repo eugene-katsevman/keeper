@@ -5,7 +5,7 @@ import datetime
 class TimeSpan(object):
     def empty(self):
         return self._from2 == self._to2
-    
+
     def __init__(self, _from, _to):
         self.set_from(_from)
         self.set_to(_to)
@@ -22,7 +22,7 @@ class TimeSpan(object):
         return self.__repr__()
 
     def __repr__(self):
-        return str(self._from)+", "+str(self._to)
+        return "("+str(self._from)+", "+str(self._to)+")"
 
     def __sub__(self, other):
         if other._from2 <= other._to2 <= self._from2:
@@ -48,11 +48,14 @@ class TimeSpan(object):
             raise AssertionError("Strange TimeSpan")
 
 class TimeSpanSet(object):
+    def lapse(self):
+        raise NotImplemented()
+
     def __init__(self, timespan = None, timespans = None, _from = None, _to=None, empty = False):
         self._spans = []
         if empty:
             return
-        if timespan or timespans:
+        if timespan or timespans is not None:
             if timespan:
                 self._spans.append(timespan)
             else:
@@ -92,7 +95,7 @@ class TimeSpanSet(object):
                 next_spans += diff
             current_spans = next_spans
 
-        return TimeSpanSet(timespans = current_spans)
+        return TimeSpanSet(timespans = current_spans, empty = not current_spans)
 
     def __str__(self):
         return "["+", ".join([str(s) for s in self._spans])+"]"

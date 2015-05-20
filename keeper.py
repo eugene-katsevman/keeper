@@ -27,7 +27,13 @@ def list_topic(arg):
 def today(arg):
     for task in taskpool.today():
         print task
-    
+
+def test(arg):
+    task_list = [task for task in taskpool.tasks if task.periodics]
+    for task in task_list:
+        print task
+        print task.generate_timespanset(datetime(2015, 5, 1), datetime(2015, 5, 9))
+
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
 parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
@@ -45,6 +51,8 @@ parser_list.set_defaults(func=list_topic, topic = None)
 parser_today = subparsers.add_parser('today', help='Lists tasks for today')
 parser_today.set_defaults(func=today)
 
+parser_test = subparsers.add_parser('test', help='Testy test')
+parser_test.set_defaults(func=test)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

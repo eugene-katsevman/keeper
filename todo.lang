@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language id="keeper" _name="Keeper" version="2.0" _section="Sources">
+  <metadata>
+    <property name="mimetypes">text/x-keeper</property>
+    <property name="globs">*.todo</property>
+  </metadata>
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="attributes" _name="Attributes" map-to="def:string"/>
+    <style id="keyword" _name="Attributes" map-to="def:keyword"/>
+  </styles>
+  <definitions>
+    <context id="keeper">
+      <include>
+        <context id="time" style-ref="def:constant">
+            <match>\d+h|\d+m</match>
+        </context>
+        <context id="comment" style-ref="comment">
+          <start>\/\/</start>
+          <end>$</end>
+        </context>
+
+        <context id="multiline-comment" style-ref="comment">
+          <start>\/\*</start>
+          <end>\*\/</end>
+        </context>
+        <context id="attributes" style-ref="attributes">
+          <start>\[</start>
+          <end>\]</end>
+        </context>
+
+        <context id="comment-hash" end-at-line-end="true" style-ref="comment">
+          <start>#</start>
+        </context>
+
+        <context ref="def:decimal"/>
+        <context ref="def:float"/>
+
+        <context id="keywords" style-ref="keyword">
+          <keyword>done</keyword>
+          <keyword>debts</keyword>
+        </context>
+
+
+      </include>
+    </context>
+  </definitions>
+</language>

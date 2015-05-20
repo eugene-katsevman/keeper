@@ -58,8 +58,8 @@ class Period(object):
             else:
                 self.specs.append(part)
 
-        print self.specs
-        print self.start_time
+        #print self.specs
+        #print self.start_time
         self.task = task
 
     def set_task(self, task):
@@ -79,7 +79,7 @@ class Period(object):
             "пятница" in self.specs and day.weekday() == 4 or \
             "суббота" in self.specs and day.weekday() == 5 or \
             "воскресенье" in self.specs and day.weekday() == 6
-        print day, result
+        #print day, result
         return result
 
     def get_timespan_for_day(self, day):
@@ -121,7 +121,7 @@ class Task:
             return timespans.TimeSpanSet(self.at, self.upper_limit)
         spans = []
         for period in self.periodics:
-            for day in days(start.date() - datetime.timedelta(days=1), end.date()):
+            for day in days(start.date() - datetime.timedelta(days=1), end.date()+datetime.timedelta(days=1)):
                 if period.has_day(day):
                     spans.append(period.get_timespan_for_day(day))
         spanset = (timespans.TimeSpanSet(timespans = spans).converge()
@@ -218,19 +218,27 @@ class TaskList:
 
 
     def special_time(self, time_from, time_to):
+        """
         result = datetime.timedelta()
         while time_from < time_to:
             if self.is_sleeping_time(time_from):
                 result += datetime.timedelta(hours=1)
             time_from += datetime.timedelta(hours=1)
         return result
+        """
+        span = timespans.TimeSpanSet(timespans = [])
+
+        for t in self.tasks:
+            if t.periodics:
+                span += t.generate_timespanset(time_from, time_to)
+        return span.length()
 
     def check(self, date_from = None):
         if date_from is None:
             date_from =  datetime.datetime.now()
 
-        limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
-        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None]
+        limited_tasks = [task for task in self.tasks if task.upper_limit is not None and not task.periodics]
+        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None and not task.periodics]
         limited_tasks.sort(key = lambda task : task.upper_limit)
 
         budget = datetime.timedelta()

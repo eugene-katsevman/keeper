@@ -51,6 +51,9 @@ class TimeSpanSet(object):
     def lapse(self):
         raise NotImplemented()
 
+    def length(self):
+        return sum([x._to - x._from for x in self._spans], datetime.timedelta())
+
     def __init__(self, timespan = None, timespans = None, _from = None, _to=None, empty = False):
         self._spans = []
         if empty:
@@ -95,7 +98,7 @@ class TimeSpanSet(object):
                 next_spans += diff
             current_spans = next_spans
 
-        return TimeSpanSet(timespans = current_spans, empty = not current_spans)
+        return TimeSpanSet(timespans = current_spans)
 
     def __str__(self):
         return "["+", ".join([str(s) for s in self._spans])+"]"

@@ -19,6 +19,8 @@ def list_topic(arg):
     task_list = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
     if args.topic:
         task_list += [task for task in taskpool.special_tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
+    if args.unscheduled:
+        task_list = [task for task in task_list if not task.upper_limit]
     for task in task_list:
         print task
     if not args.no_total:
@@ -45,6 +47,7 @@ parser_scheduled.set_defaults(func=scheduled)
 parser_list = subparsers.add_parser('list', help='List all tasks')
 parser_list.add_argument("topic", nargs="*")
 parser_list.add_argument("--no-total", action="store_true", help = "do not count total work hours")
+parser_list.add_argument("--unscheduled", action="store_true", help = "show unscheduled tasks only")
 parser_list.set_defaults(func=list_topic, topic = None)
 
 

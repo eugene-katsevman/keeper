@@ -149,6 +149,7 @@ class TaskList:
             if line:
                 if in_comment and "*/" in line:
                   in_comment = False
+                  continue
                 if in_comment:
                     continue
                 if line.strip().startswith('//') or line.strip().startswith('#'):

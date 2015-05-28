@@ -59,6 +59,8 @@ parser_test.set_defaults(func=test)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])
+elif sys.argv[1] == "current":
+    args = parser.parse_args(['list', 'current'])
 else:
     args = parser.parse_args()
     

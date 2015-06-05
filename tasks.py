@@ -4,7 +4,9 @@ import re
 import datetime
 import os.path
 import timespans
+import platform
 
+WINDOWS = platform.system() == 'Windows'
 from settings import *
 
 def get_length(s):
@@ -132,9 +134,23 @@ class Task:
                   - timespans.TimeSpanSet(_from=end, _to=None)
         return spanset.converge()
 
-    def __str__(self):
+    def __str__(self):        
+        return self.__unicode__()
 
-        return "{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
+    def __unicode__(self):
+        #print self.topic
+        #print self.name
+        #print self.planned_time_to_str()
+
+        if not WINDOWS:
+            return u"{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
+        else:
+            topic = self.topic
+            if not topic:
+                topic = "None"
+            return "{} {} [{}]".format(topic.encode("cp866"), self.name.encode('cp866'), self.planned_time_to_str().encode('cp866'))
+        
+    
 
         
 class TaskList:
@@ -148,7 +164,10 @@ class TaskList:
         current_section = None
         in_comment = False
         for line in open(filename).readlines():        
-            line = line.rstrip()
+            line = line.rstrip()            
+            if WINDOWS:                
+                line = line.decode('windows-1251')
+                
             if line:
                 if in_comment and "*/" in line:
                   in_comment = False
@@ -160,20 +179,21 @@ class TaskList:
                 elif line.strip().startswith("/*"):
                     in_comment = True
                 elif line.endswith(':'):
-                    current_section = line.strip()[:-1]
+                    current_section = line.strip()[:-1]                    
                 else:
-                    if not line.startswith(' '):
+                    if not line.startswith(' ') and not line.startswith('\t'):
                         current_section = None
                     attributes = self.extract_attributes(line)
                     attributes['topic'] = current_section
                     attributes['topics'] += [os.path.basename(filename).split('.')[0]]
                     if current_section:
                         attributes['topics'].append(current_section)
-
+                    task = Task(**attributes)
+                    
                     if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
-                        self.tasks.append(Task(**attributes))
+                        self.tasks.append(task)
                     else:
-                        self.special_tasks.append(Task(**attributes))
+                        self.special_tasks.append(task)
 
     @staticmethod
     def extract_attributes(line):

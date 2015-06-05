@@ -8,6 +8,9 @@ import argparse
 import random
 from settings import *
 from datetime import datetime
+import platform
+
+WINDOWS = platform.system() == "Windows"
 
 taskpool = tasks.load_all()
 
@@ -18,6 +21,9 @@ def scheduled(arg):
     taskpool.scheduled()
 
 def list_topic(arg):
+    if args.topic and WINDOWS:
+        args.topic = [topic.decode('windows-1251') for topic in args.topic]
+    
     task_list = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
     if arg.topic:
         if set(arg.topic).intersection(set(IGNORED_SECTIONS)):

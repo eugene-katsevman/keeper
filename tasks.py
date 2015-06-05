@@ -37,6 +37,9 @@ def looks_like_length(s):
 def looks_like_periodic(s):
     return s.startswith("+")
 
+def looks_like_page_count(s):
+    return [] != re.findall('\d+p', s)
+
 
 def days(datefrom, dateto):
     datenow = datefrom
@@ -163,11 +166,11 @@ class TaskList:
                         current_section = None
                     attributes = self.extract_attributes(line)
                     attributes['topic'] = current_section
-                    attributes['topics'] = [os.path.basename(filename).split('.')[0]]
+                    attributes['topics'] += [os.path.basename(filename).split('.')[0]]
                     if current_section:
                         attributes['topics'].append(current_section)
 
-                    if current_section not in IGNORED_SECTIONS:
+                    if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
                         self.tasks.append(Task(**attributes))
                     else:
                         self.special_tasks.append(Task(**attributes))
@@ -177,6 +180,7 @@ class TaskList:
         try:
             result = dict()
             result['name'] = line.strip()
+            result['topics'] = []
             times = re.findall('\d+[hm]|\?[hm]', line)
             if times:
                 time = times[0]
@@ -185,6 +189,7 @@ class TaskList:
             if attribute_line:
                 attributes = [attr.strip() for attr in attribute_line[0].split(',')]
                 periodics = []
+
                 for attr in attributes:
                     if looks_like_datetime(attr):
                         result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')
@@ -198,6 +203,15 @@ class TaskList:
                         result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y')
                     elif looks_like_periodic(attr):
                         periodics.append(Period(attr))
+                    elif looks_like_page_count(attr):
+                        page_count = int(attr[:-1])
+                        result['topics'].append("books")
+                        if "hard" in attributes:
+                            result['length'] = page_count * 0.2
+                        else:
+                            result['length'] = page_count * 0.1
+                    else:
+                        result['topics'].append(attr)        
                 result['periodics'] = periodics
             return result                        
         except Exception as e:

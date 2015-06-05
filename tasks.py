@@ -143,7 +143,7 @@ class Task:
         #print self.planned_time_to_str()
 
         if not WINDOWS:
-            return u"{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
+            return "{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
         else:
             topic = self.topic
             if not topic:

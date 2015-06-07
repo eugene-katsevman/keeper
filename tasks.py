@@ -162,6 +162,7 @@ class TaskList:
         
     def load_from_file(self, filename):
         current_section = None
+        section_attributes = dict()
         in_comment = False
         for line in open(filename).readlines():        
             line = line.rstrip()            
@@ -179,17 +180,25 @@ class TaskList:
                 elif line.strip().startswith("/*"):
                     in_comment = True
                 elif line.endswith(':'):
-                    current_section = line.strip()[:-1]                    
+                    current_section = line.strip()[:-1]
+                    section_attributes = self.extract_attributes(current_section)
+                    #print section_attributes
                 else:
+                    attributes = dict()
                     if not line.startswith(' ') and not line.startswith('\t'):
                         current_section = None
-                    attributes = self.extract_attributes(line)
+                        section_attributes = dict()
+                    attributes.update(section_attributes)
+                    attributes.update(self.extract_attributes(line))
                     attributes['topic'] = current_section
                     attributes['topics'] += [os.path.basename(filename).split('.')[0]]
+                    if 'topics' in section_attributes:
+                        attributes['topics'] += section_attributes['topics']
                     if current_section:
                         attributes['topics'].append(current_section)
                     task = Task(**attributes)
-                    
+                    #if current_section and current_section.startswith("парсер"):
+                    #    print attributes['topics']
                     if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
                         self.tasks.append(task)
                     else:

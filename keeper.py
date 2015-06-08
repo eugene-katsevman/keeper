@@ -9,6 +9,7 @@ import random
 from settings import *
 from datetime import datetime
 import platform
+import os
 
 WINDOWS = platform.system() == "Windows"
 
@@ -55,6 +56,11 @@ def random_tasks(arg):
     if not args.no_total:
         print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
         
+def edit(arg):
+    if args.filenames:
+        os.system("gedit "+" ".join(["~/work/keeper/lists/"+fn + ".todo" for fn in args.filenames]))
+    else:
+        os.system("todo")
 
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
@@ -81,6 +87,10 @@ parser_random = subparsers.add_parser('random', help='Show ten random tasks')
 parser_random.add_argument("--no-total", action="store_true", help = "do not count total work hours")
 
 parser_random.set_defaults(func=random_tasks)
+
+parser_edit = subparsers.add_parser('edit', help='start default system editor for all todo files')
+parser_edit.add_argument("filenames", nargs="*")
+parser_edit.set_defaults(func=edit)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

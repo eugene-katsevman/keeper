@@ -182,6 +182,8 @@ class TaskList:
                 elif line.endswith(':'):
                     current_section = line.strip()[:-1]
                     section_attributes = self.extract_attributes(current_section)
+                    current_section = re.sub('\[.*\]', '', current_section)
+                    current_section = re.sub('[ ]+', ' ', current_section.strip())
                     #print section_attributes
                 else:
                     attributes = dict()
@@ -197,8 +199,6 @@ class TaskList:
                     if current_section:
                         attributes['topics'].append(current_section)
                     task = Task(**attributes)
-                    #if current_section and current_section.startswith("парсер"):
-                    #    print attributes['topics']
                     if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
                         self.tasks.append(task)
                     else:

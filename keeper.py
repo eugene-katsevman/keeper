@@ -43,6 +43,8 @@ def list_topic(arg):
 
     if args.unscheduled:
         task_list = [task for task in task_list if not task.upper_limit]
+    if args.sort:
+        task_list.sort(key = lambda task : task.length)
     for task in task_list:
         print task
     if not args.no_total:
@@ -93,6 +95,7 @@ parser_list = subparsers.add_parser('list', help='List all tasks')
 parser_list.add_argument("topic", nargs="*")
 parser_list.add_argument("--no-total", action="store_true", help = "do not count total work hours")
 parser_list.add_argument("--unscheduled", action="store_true", help = "show unscheduled tasks only")
+parser_list.add_argument("--sort", action="store_true", help = "sort output by length")
 parser_list.set_defaults(func=list_topic, topic = None)
 
 

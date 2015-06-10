@@ -236,9 +236,9 @@ class TaskList:
                         page_count = int(attr[:-1])
                         result['topics'].append("books")
                         if "hard" in attributes:
-                            result['length'] = page_count * 0.2
+                            result['length'] = page_count * HARD_PAGE_TIME
                         else:
-                            result['length'] = page_count * 0.1
+                            result['length'] = page_count * SIMPLE_PAGE_TIME
                     else:
                         result['topics'].append(attr)        
                 result['periodics'] = periodics
@@ -304,10 +304,12 @@ class TaskList:
         print budget, " unscheduled worktime left"
         unbound_time = sum([datetime.timedelta(hours = task.length) for task in unbound_tasks], datetime.timedelta())
         print "All other tasks are", unbound_time
+        left = (budget - unbound_time).total_seconds()/60.0/60
+        print abs(left), "h of unassigned time" if left > 0 else "h shortage"
+
         if unbound_time > budget:
             print "You're short of time. Either limit some unbound tasks, or postpone some of limited"
         else:
-            print budget - unbound_time, " of unassigned time"
             print "NOMINAL"
 
     def scheduled(self, date_from = None):

@@ -1,8 +1,8 @@
 # -*- coding:utf8 -*-
-DAY_LENGTH = 24
-SLEEP_HOURS = 8
-MEAL_COUNT = 4
 
 CONTEXTS = {"восстания", "волгоградская", "шмидта", "работа", "спортзал", "университет"}
 
 IGNORED_SECTIONS = {'done', 'debts', 'delegated'}
+
+HARD_PAGE_TIME = 0.2
+SIMPLE_PAGE_TIME = 0.1

@@ -24,12 +24,23 @@ def scheduled(arg):
 def list_topic(arg):
     if args.topic and WINDOWS:
         args.topic = [topic.decode('windows-1251') for topic in args.topic]
-    
-    task_list = [task for task in taskpool.tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
-    if arg.topic:
-        if set(arg.topic).intersection(set(IGNORED_SECTIONS)):
-            print "in ignored"
-            task_list += [task for task in taskpool.special_tasks if not args.topic or set(task.topics).intersection(set(arg.topic))]
+
+
+
+    if not args.topic:
+        task_list = taskpool.tasks
+    else:
+        task_list = []
+        topic_list_or = [set(topic.split('.')) for topic in arg.topic]
+        for topic_list_and in topic_list_or:
+            if topic_list_and.intersection(IGNORED_SECTIONS):
+                src_list = taskpool.special_tasks
+            else:
+                src_list = taskpool.tasks
+            for task in src_list:
+                if set(task.topics).issuperset(topic_list_and):
+                    task_list.append(task)
+
     if args.unscheduled:
         task_list = [task for task in task_list if not task.upper_limit]
     for task in task_list:

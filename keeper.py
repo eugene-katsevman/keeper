@@ -66,12 +66,20 @@ def random_tasks(arg):
         print task
     if not args.no_total:
         print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
-        
+
+
 def edit(arg):
     if args.filenames:
         os.system("gedit "+" ".join(["~/work/keeper/lists/"+fn + ".todo" for fn in args.filenames]))
     else:
         os.system("todo")
+
+
+def show_topics(arg):
+    topics = list(set.union(*[set(task.topics) for task in taskpool.tasks + taskpool.special_tasks]))
+    topics.sort()
+    for topic in topics:
+        print topic
 
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
@@ -102,6 +110,10 @@ parser_random.set_defaults(func=random_tasks)
 parser_edit = subparsers.add_parser('edit', help='start default system editor for all todo files')
 parser_edit.add_argument("filenames", nargs="*")
 parser_edit.set_defaults(func=edit)
+
+
+parser_topics = subparsers.add_parser('topics', help='show topic list and some stats')
+parser_topics.set_defaults(func=show_topics)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

@@ -24,9 +24,6 @@ def scheduled(arg):
 def list_topic(arg):
     if args.topic and WINDOWS:
         args.topic = [topic.decode('windows-1251') for topic in args.topic]
-
-
-
     if not args.topic:
         task_list = taskpool.tasks
     else:
@@ -41,6 +38,8 @@ def list_topic(arg):
                 if set(task.topics).issuperset(topic_list_and):
                     task_list.append(task)
 
+    task_list = [task for task in task_list if not task.periodics]
+
     if args.unscheduled:
         task_list = [task for task in task_list if not task.upper_limit]
     if args.sort:
@@ -48,7 +47,9 @@ def list_topic(arg):
     for task in task_list:
         print task
     if not args.no_total:
-        print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime"
+        print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
+            sum([task.cost for task in task_list if task.cost]), "rubles gain"
+
 
 def today(arg):
     for task in taskpool.today():

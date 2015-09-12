@@ -42,6 +42,12 @@ def looks_like_periodic(s):
 def looks_like_page_count(s):
     return [] != re.findall('\d+p', s)
 
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 def days(datefrom, dateto):
     datenow = datefrom
@@ -93,10 +99,11 @@ class Period(object):
                                   _to = _from + datetime.timedelta(hours = self.task.length))
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None):
+    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None):
         self.name = name
         self.length = length
         self.topic = topic
+        self.cost = cost
         self.periodics = periodics
         if self.periodics:
             for period in self.periodics:
@@ -232,6 +239,10 @@ class TaskList:
                         result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y')
                     elif looks_like_periodic(attr):
                         periodics.append(Period(attr))
+                    elif attr.startswith('$') or attr.startswith("р"):
+                        #print attr, attr[1:], is_number(attr[1:])
+                        result['cost'] = float(attr[2:])
+                        result['topics'].append('money')
                     elif looks_like_page_count(attr):
                         page_count = int(attr[:-1])
                         result['topics'].append("books")
@@ -244,7 +255,7 @@ class TaskList:
                 result['periodics'] = periodics
             return result                        
         except Exception as e:
-            raise Exception("error while parsing {}".format(line))
+            raise Exception("error while parsing {}: ".format(line) + e.message)
 
     def today(self):
         return [task for task in self.tasks if task.upper_limit is not None and task.upper_limit.date()<=datetime.date.today()]

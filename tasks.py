@@ -221,9 +221,10 @@ class TaskList:
             if times:
                 time = times[0]
                 result['length'] = get_length(time)
-            attribute_line = re.findall('\[(.*)\]', line)
+            attribute_line = re.findall('\[(.*?)\]', line)
+
             if attribute_line:
-                attributes = [attr.strip() for attr in attribute_line[0].split(',')]
+                attributes = [attr.strip() for attr_set in attribute_line for attr in attr_set.split(',')]
                 periodics = []
 
                 for attr in attributes:

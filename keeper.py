@@ -73,7 +73,7 @@ def random_tasks(arg):
 
 def edit(arg):
     if args.filenames:
-        os.system("gedit "+" ".join(["~/work/keeper/lists/"+fn + ".todo" for fn in args.filenames]))
+        os.system("gedit "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
     else:
         os.system("todo")
 

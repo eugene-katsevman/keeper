@@ -84,6 +84,14 @@ def show_topics(arg):
     for topic in topics:
         print topic
 
+def done(arg):
+
+    lists_dir = tasks.get_dir()
+    for filename in arg.files:
+        _from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
+        print "moving {} to {}".format(_from, _to)
+        os.rename(_from, _to)
+
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
 parser_check = subparsers.add_parser('check', help='Quick check current scheduled tasks')
@@ -115,9 +123,12 @@ parser_edit = subparsers.add_parser('edit', help='start default system editor fo
 parser_edit.add_argument("filenames", nargs="*")
 parser_edit.set_defaults(func=edit)
 
-
 parser_topics = subparsers.add_parser('topics', help='show topic list and some stats')
 parser_topics.set_defaults(func=show_topics)
+
+parser_done = subparsers.add_parser('done', help='mark file as done')
+parser_done.add_argument("files", nargs="+", help="file names to be marked as done")
+parser_done.set_defaults(func=done)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

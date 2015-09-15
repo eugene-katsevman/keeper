@@ -9,6 +9,9 @@ import platform
 WINDOWS = platform.system() == 'Windows'
 from settings import *
 
+def get_dir():
+    return os.path.dirname(__file__)+"/lists/"
+
 def get_length(s):
     if '?' in s:
         return None
@@ -334,7 +337,7 @@ class TaskList:
             
 def load_all():
     taskpool = TaskList()
-    lists_dir = os.path.dirname(__file__)+"/lists/"
+    lists_dir = get_dir()
     for filename in os.listdir(lists_dir):
         taskpool.load_from_file(lists_dir+filename)
     return taskpool

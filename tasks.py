@@ -102,11 +102,12 @@ class Period(object):
                                   _to = _from + datetime.timedelta(hours = self.task.length))
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None):
+    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None):
         self.name = name
         self.length = length
         self.topic = topic
         self.cost = cost
+        self.file = file
         self.periodics = periodics
         if self.periodics:
             for period in self.periodics:
@@ -153,7 +154,7 @@ class Task:
         #print self.planned_time_to_str()
 
         if not WINDOWS:
-            return "{} {} [{}]".format(self.topic, self.name, self.planned_time_to_str())
+            return "<{}> {} {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], self.topic, self.name, self.planned_time_to_str())
         else:
             topic = self.topic
             if not topic:
@@ -202,6 +203,7 @@ class TaskList:
                         section_attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(self.extract_attributes(line))
+                    attributes['file'] = filename
                     attributes['topic'] = current_section
                     attributes['topics'] += [os.path.basename(filename).split('.')[0]]
                     if 'topics' in section_attributes:

@@ -16,10 +16,10 @@ Here is an example of todo file
 do a workplan for my project 2h
 
 # this task lasts for 20 minutes and has a deadline of May 23rd 2015
-отправить первую версию программы [<23.05.2015, 20m]
+deploy the first version [<23.05.2015, 20m]
 
 # this is an appointment, which starts on May 24 2014 at 2 pm and will last for 2 hours
-встретиться с заказчиком [24.05.2015 14:00, 2h]
+meet the customer [24.05.2015 14:00, 2h]
 
 /*
 This is a multiline comment
@@ -66,6 +66,6 @@ read Differential Equations by Elsgolts [122p, hard, math, learning]
   _keeper current_ query evaluates to _keeper list current_ , thus things you want to do first could be marked by
  [current] tag or placed into a current: topic.
  Filenames are topics too, by the way
- 
+
 */
 </pre>

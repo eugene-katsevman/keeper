@@ -341,7 +341,8 @@ def load_all():
     taskpool = TaskList()
     lists_dir = get_dir()
     for filename in os.listdir(lists_dir):
-        taskpool.load_from_file(lists_dir+filename)
+        if filename.endswith(".todo"):
+            taskpool.load_from_file(lists_dir+filename)
     return taskpool
 
 if __name__== "__main__":

@@ -85,10 +85,16 @@ def show_topics(arg):
         print topic
 
 def done(arg):
-
     lists_dir = tasks.get_dir()
     for filename in arg.files:
         _from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
+        print "moving {} to {}".format(_from, _to)
+        os.rename(_from, _to)
+
+def undo(arg):
+    lists_dir = tasks.get_dir()
+    for filename in arg.files:
+        _from, _to = lists_dir+filename+".done", lists_dir+filename+".todo"
         print "moving {} to {}".format(_from, _to)
         os.rename(_from, _to)
 
@@ -129,6 +135,10 @@ parser_topics.set_defaults(func=show_topics)
 parser_done = subparsers.add_parser('done', help='mark file as done')
 parser_done.add_argument("files", nargs="+", help="file names to be marked as done")
 parser_done.set_defaults(func=done)
+
+parser_undo = subparsers.add_parser('undo', help='revert done file to todo')
+parser_done.add_argument("files", nargs="+", help="done file names to be reverted")
+parser_done.set_defaults(func=undo)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

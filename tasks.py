@@ -9,6 +9,7 @@ import platform
 WINDOWS = platform.system() == 'Windows'
 from settings import *
 
+
 def get_dir():
     return os.path.dirname(__file__)+"/lists/"
 
@@ -71,7 +72,8 @@ class Period(object):
                 self.start_time = datetime.datetime.strptime(part, '%H:%M').time()
             else:
                 self.specs.append(part)
-
+        if not self.start_time:
+            raise Exception('no start time specified for task')
         #print self.specs
         #print self.start_time
         self.task = task
@@ -86,14 +88,13 @@ class Period(object):
         :return:
         """
         result = not self.specs or \
-            "понедельник" in self.specs and day.weekday() == 0 or \
-            "вторник" in self.specs and day.weekday() == 1 or \
-            "среда" in self.specs and day.weekday() == 2 or \
-            "четверг" in self.specs and day.weekday() == 3 or \
-            "пятница" in self.specs and day.weekday() == 4 or \
-            "суббота" in self.specs and day.weekday() == 5 or \
-            "воскресенье" in self.specs and day.weekday() == 6
-        #print day, result
+            any(d in self.specs for d in ["понедельник", 'Monday', 'monday'])and day.weekday() == 0 or \
+            any(d in self.specs for d in ["вторник",'Tuesday', 'tuesday']) and day.weekday() == 1 or \
+            any(d in self.specs for d in ["среда",'Wednesday', 'wednesday']) and day.weekday() == 2 or \
+            any(d in self.specs for d in ["четверг",'Thursday', 'thursday'])  and day.weekday() == 3 or \
+            any(d in self.specs for d in ["пятница",'Friday', 'friday'])  and day.weekday() == 4 or \
+            any(d in self.specs for d in ["суббота",'Saturday', 'saturday'])  and day.weekday() == 5 or \
+            any(d in self.specs for d in ["воскресенье",'Sunday', 'sunday']) and day.weekday() == 6
         return result
 
     def get_timespan_for_day(self, day):

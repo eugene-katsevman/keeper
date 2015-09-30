@@ -5,6 +5,20 @@ An extensible console tool for long-term planning.
 +[![Join the chat at https://gitter.im/eugene-katsevman/keeper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eugene-katsevman/keeper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Keeper is a todo.txt-ish CLI tool for mid and long-term planning. It's main purpose is to tell if you have enough time at your hands.
+
+# Contents
+
+- [Install](#)
+- [Basic usage](#)
+- [Grouping and queries](#)
+- [Attributes](#)
+- [AND queries](#)
+- [OR queries](#)
+- [Combining conditions](#)
+- [Special tags --- done, delegated, optional](#)
+- [Scheduling](#)
+- [TODO file example](#)
+
 # Install
 To install Keeper and start using it:
 * download or clone it

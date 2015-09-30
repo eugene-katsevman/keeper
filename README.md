@@ -75,7 +75,8 @@ The `keeper list` command keeps showing us `None` after the task filename. `None
     Total: 4 task(s), 7.67 h of worktime
 
 We could list only project1's tasks by doing
->>> keeper list project1
+
+    keeper list project1
 
 # Attributes
 Each task may have different attributes. Task duration is only one of them. There could be **deadlines** , **exact start time**, **periodics** specification, **tags** and some other kinds of attributes.

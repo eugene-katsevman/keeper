@@ -8,16 +8,16 @@ Keeper is a todo.txt-ish CLI tool for mid and long-term planning. It's main purp
 
 # Contents
 
-- [Install](#)
-- [Basic usage](#)
-- [Grouping and queries](#)
-- [Attributes](#)
-- [AND queries](#)
-- [OR queries](#)
-- [Combining conditions](#)
-- [Special tags --- done, delegated, optional](#)
-- [Scheduling](#)
-- [TODO file example](#)
+- [Install](#install)
+- [Basic usage](#basic-usage)
+- [Grouping and queries](#grouping-and-queries)
+- [Attributes](#attributes)
+- [AND queries](#and-queries)
+- [OR queries](#or-queries)
+- [Combining conditions](#combining-conditions)
+- [Special tags --- done, delegated, optional](#special-tags-----done-delegated-optional)
+- [Scheduling](#scheduling)
+- [TODO file example](#todo-file-example)
 
 # Install
 To install Keeper and start using it:

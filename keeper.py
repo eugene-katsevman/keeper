@@ -137,8 +137,8 @@ parser_done.add_argument("files", nargs="+", help="file names to be marked as do
 parser_done.set_defaults(func=done)
 
 parser_undo = subparsers.add_parser('undo', help='revert done file to todo')
-parser_done.add_argument("files", nargs="+", help="done file names to be reverted")
-parser_done.set_defaults(func=undo)
+parser_undo.add_argument("files", nargs="+", help="done file names to be reverted")
+parser_undo.set_defaults(func=undo)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

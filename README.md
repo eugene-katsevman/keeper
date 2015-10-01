@@ -1,10 +1,47 @@
 
 # Keeper
-An extensible console tool for long-term planning.
+An extensible console tool for long-term planning, written in Python 2.7 for Linux-based OS. Windows support is still experimental.
+
+Keeper's main purpose is to tell if you have enough time at your hands.
 
 +[![Join the chat at https://gitter.im/eugene-katsevman/keeper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eugene-katsevman/keeper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Keeper is a todo.txt-ish CLI tool for mid and long-term planning. It's main purpose is to tell if you have enough time at your hands.
+# Quick start
+Say, today is Oct 1, 2015. Then, given this input file:
+
+    project1 [<7.10.2015]:
+        Write all stuff [writing, stuff] 20h
+        Test all stuff 20h [testing, stuff]
+        Document everything 20h
+
+    hobby:
+        Get drunk, dance with bears [7h, 6.10.2015 00:00]
+        Finish red wood chair [10h]
+
+    Visit parents [5.10.2015 14:00, 24h]
+    Meet the boss [4.10.2015 14:00, 3h]
+    done:
+        Think of everything
+        Buy milk [delegated, Maria]
+
+    // periodic tasks
+    sleep [+22:00, 8h]
+
+result of
+
+    keeper check
+    
+will be
+
+    FUCKUP <example> project1 Document everything 20h [20.0h]
+    3 days, 22:00:00  time scheduled
+    -1 day, 20:33:15.797719  unscheduled worktime left
+    All other tasks are 10:00:00
+    13.4456117447 h shortage
+    You're short of time. Either limit some unbound tasks, or postpone some of limited
+
+which means you're probably in a very bad situation and you should act!
+
 
 # Contents
 

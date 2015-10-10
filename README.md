@@ -64,7 +64,7 @@ To install Keeper and start using it:
    
 From now on, you might start using it.
 # Basic usage
-Here are simplest use case:
+Here is th simplest use case:
 ```bash
 keeper edit main
 ```

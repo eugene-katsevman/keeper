@@ -155,12 +155,12 @@ class Task:
         #print self.planned_time_to_str()
 
         if not WINDOWS:
-            return "<{}> {} {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], self.topic, self.name, self.planned_time_to_str())
+            return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], self.topic, self.name, self.planned_time_to_str())
         else:
             topic = self.topic
             if not topic:
                 topic = "None"
-            return "<{}> {} {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], topic.encode("cp866"), self.name.encode('cp866'), self.planned_time_to_str().encode('cp866'))
+            return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], topic.encode("cp866"), self.name.encode('cp866'), self.planned_time_to_str().encode('cp866'))
         
     
 

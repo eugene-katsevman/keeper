@@ -10,8 +10,23 @@ from settings import *
 from datetime import datetime
 import platform
 import os
+import errno
 
 WINDOWS = platform.system() == "Windows"
+
+lists_dir = tasks.get_dir()
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+mkdir_p(lists_dir)
+
+
 
 taskpool = tasks.load_all()
 

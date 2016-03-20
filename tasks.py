@@ -10,6 +10,14 @@ WINDOWS = platform.system() == 'Windows'
 from settings import *
 
 
+def set_line(filename, lineno, line):
+    with open(filename, 'r') as file:
+        data = file.readlines()
+    data[lineno] = line + '\n'
+    with open(filename, 'w') as file:
+        file.writelines( data )
+
+
 def get_dir():
     return os.path.dirname(__file__)+"/lists/"
 
@@ -103,7 +111,9 @@ class Period(object):
                                   _to = _from + datetime.timedelta(hours = self.task.length))
 
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None):
+    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None, lineno=None, line=None):
+        self.lineno = lineno
+        self.line = line
         self.name = name
         self.length = length
         self.topic = topic
@@ -125,7 +135,17 @@ class Task:
             self.upper_limit = self.at
         elif self.till is not None:
             self.upper_limit = self.till
-        
+
+    @property
+    def addressable(self):
+        return self.file and self.lineno
+
+    def add_attr_back(self, attr):
+        if self.addressable:
+            set_line(self.file, self.addressable, self.line + ' ['+attr+']')
+        else:
+            raise Exception("Can't save unaddressable task")
+
     def planned_time_to_str(self):
         if self.length is None:
             return 'unknown'
@@ -176,7 +196,7 @@ class TaskList:
         current_section = None
         section_attributes = dict()
         in_comment = False
-        for line in open(filename).readlines():        
+        for lineno, line in enumerate(open(filename).readlines()):
             line = line.rstrip()            
             if WINDOWS:                
                 line = line.decode('windows-1251')
@@ -204,13 +224,16 @@ class TaskList:
                         section_attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(self.extract_attributes(line))
+                    attributes['line'] = line
                     attributes['file'] = filename
+                    attributes['lineno'] = lineno
                     attributes['topic'] = current_section
                     attributes['topics'] += [os.path.basename(filename).split('.')[0]]
                     if 'topics' in section_attributes:
                         attributes['topics'] += section_attributes['topics']
                     if current_section:
                         attributes['topics'].append(current_section)
+
                     task = Task(**attributes)
                     if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
                         self.tasks.append(task)

@@ -66,6 +66,8 @@ def list_topic(arg):
         
     for task in task_list:
         print task
+        if args.set_attr:
+            task.add_attr_back(args.set_attr)
     if not args.no_total:
         print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
             sum([task.cost for task in task_list if task.cost]), "rubles gain"
@@ -132,6 +134,7 @@ parser_list.add_argument("--no-total", action="store_true", help = "do not count
 parser_list.add_argument("--unscheduled", action="store_true", help = "show unscheduled tasks only")
 parser_list.add_argument("--sort", action="store_true", help = "sort output by length")
 parser_list.add_argument("--australian", action="store_true", help = "accomodate for Australian nature")
+parser_list.add_argument("--set_attr", help = "set custom attr")
 parser_list.set_defaults(func=list_topic, topic = None)
 
 

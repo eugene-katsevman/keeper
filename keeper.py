@@ -84,6 +84,29 @@ def test(arg):
     t.remove_attr_by_value('attr2')
     t.save()
 
+def work(arg):
+    import cmd
+    class WorkCmd(cmd.Cmd):
+        def __init__(self):
+            cmd.Cmd.__init__(self)
+            self.prompt = '>'
+
+        def do_exit(self, arg):
+            """
+            Exit
+            """
+            print "Have a nice day!"
+            return True
+        def show_tasks(self):
+            for i, task in enumerate(taskpool.tasks):
+                print ("{}) {}".format(i, str(task)))
+        def do_current(self, arg):
+            self.show_tasks()
+
+    mycmd = WorkCmd()
+    mycmd.cmdloop("You have entered keeper's interactive mode")
+
+
 def random_tasks(arg):
     task_list = [task for task in taskpool.tasks if not task.periodics and not task.upper_limit]
     
@@ -164,6 +187,9 @@ parser_done.set_defaults(func=done)
 parser_undo = subparsers.add_parser('undo', help='revert done file to todo')
 parser_undo.add_argument("files", nargs="+", help="done file names to be reverted")
 parser_undo.set_defaults(func=undo)
+
+parser_work = subparsers.add_parser('work', help='simple interactive mode')
+parser_work.set_defaults(func=work)
 
 if (len(sys.argv) < 2):
     args = parser.parse_args(['check'])

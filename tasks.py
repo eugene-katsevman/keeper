@@ -112,6 +112,7 @@ class Period(object):
 
 class Task:
     def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None, lineno=None, line=None):
+        self.taskline = TaskLine(line, lineno, file)
         self.lineno = lineno
         self.line = line
         self.name = name
@@ -136,15 +137,6 @@ class Task:
         elif self.till is not None:
             self.upper_limit = self.till
 
-    @property
-    def addressable(self):
-        return self.file and self.lineno
-
-    def add_attr_back(self, attr):
-        if self.addressable:
-            set_line(self.file, self.addressable, self.line + ' ['+attr+']')
-        else:
-            raise Exception("Can't save unaddressable task")
 
     def planned_time_to_str(self):
         if self.length is None:
@@ -182,9 +174,98 @@ class Task:
                 topic = "None"
             return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], topic.encode("cp866"), self.name.encode('cp866'), self.planned_time_to_str().encode('cp866'))
         
-    
 
-        
+class Attr(object):
+    def __init__(self, location, text):
+        self.location = location
+        self.text = text
+        self.value = text.strip()
+    def __repr__(self):
+        return str((self.location, self.text, self.value))
+
+class AttrCollection(object):
+    def __init__(self, location, text):
+        self.text = text
+        self.attrs = []
+        index = 0
+        self.location = location
+        while index < len(text):
+            next_index = text.find(',', index)
+            if next_index == -1:
+                next_index = len(text)
+            self.attrs.append(Attr(location + index, text[index:next_index] ))
+            index = next_index + 1
+    def __repr__(self):
+        return str(self.attrs)
+
+    def is_empty(self):
+        return self.attrs == [] or len(self.attrs) == 1 and self.attrs[0].value == ''
+
+class TaskLine(object):
+    """
+    bidirectional interface to task as stored in a file
+    """
+    def _parse(self):
+        """
+        recapture attribute collections
+        :return: nothing
+        """
+        self.attr_collections = []
+        index = self.line.find('[')
+        while index != -1:
+            end_index = self.line.find(']', index)
+            self.attr_collections.append(AttrCollection(index+1, self.line[index+1:end_index]))
+            index = self.line.find('[', end_index)
+
+    def __init__(self, line, lineno, filename):
+        self.line = line
+        self.lineno = lineno
+        self.filename = filename
+        self._parse()
+
+    def __str__(self):
+        return "{} with attr collections ({})".format(self.line, self.attr_collections)
+
+
+    def has_attr(self, value):
+        for collection in self.attr_collections:
+            for attr in collection.attrs:
+                if attr.value == value:
+                    return True
+        return False
+
+    def set_attr(self, value):
+        if not self.has_attr(value):
+            self.add_attr(value)
+
+    def add_attr(self, value):
+        """
+        :param value: new attribute to add to the line
+        :return:
+        """
+        if self.attr_collections == []:
+            self.line += ' [{}]'.format(value)
+        else:
+            collection = self.attr_collections[-1]
+            self.line = self.line[:collection.location+len(collection.text)] + ", " + value + \
+                self.line[collection.location+len(collection.text) :]
+        self._parse()
+
+    def remove_attr_by_value(self, value):
+        for collection in reversed(self.attr_collections):
+            for i, attr in enumerate(reversed(collection.attrs)):
+                if attr.value == value:
+                    self.line = self.line[:attr.location]+self.line[attr.location+len(attr.text)+ (1 if i!=0 else 0):]
+        self._parse()
+
+        for collection in reversed(self.attr_collections):
+            if collection.is_empty():
+                self.line = self.line[:collection.location-1]+self.line[collection.location+len(collection.text)+1:]
+        self._parse()
+
+    def save(self):
+        set_line(self.filename, self.lineno, self.line)
+
 class TaskList:
     def __init__(self, filename = None):
         self.tasks = []

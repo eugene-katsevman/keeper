@@ -78,10 +78,11 @@ def today(arg):
         print task
 
 def test(arg):
-    task_list = [task for task in taskpool.tasks if task.periodics]
-    for task in task_list:
-        print task
-        print task.generate_timespanset(datetime(2015, 5, 1), datetime(2015, 5, 9))
+    t = taskpool.tasks[0].taskline
+    t.remove_attr_by_value('don')
+    t.remove_attr_by_value('alala')
+    t.remove_attr_by_value('attr2')
+    t.save()
 
 def random_tasks(arg):
     task_list = [task for task in taskpool.tasks if not task.periodics and not task.upper_limit]

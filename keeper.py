@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 # -*- coding:utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 import tasks
@@ -14,16 +14,21 @@ import errno
 
 WINDOWS = platform.system() == "Windows"
 
+if WINDOWS:
+	import sys
+	reload(sys)
+	sys.setdefaultencoding('utf8')
+
 lists_dir = tasks.get_dir()
 
 def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+	try:
+		os.makedirs(path)
+	except OSError as exc:  # Python >2.5
+		if exc.errno == errno.EEXIST and os.path.isdir(path):
+			pass
+		else:
+			raise
 mkdir_p(lists_dir)
 
 
@@ -31,118 +36,126 @@ mkdir_p(lists_dir)
 taskpool = tasks.load_all()
 
 def check(arg):    
-    taskpool.check()
+	taskpool.check()
 
 def scheduled(arg):
-    taskpool.scheduled()
+	taskpool.scheduled()
 
 def list_topic(arg):
-    if args.topic and WINDOWS:
-        args.topic = [topic.decode('windows-1251') for topic in args.topic]
-    if not args.topic:
-        task_list = taskpool.tasks
-    else:
-        task_list = []
-        topic_list_or = [set(topic.split('.')) for topic in arg.topic]
-        for topic_list_and in topic_list_or:
-            if topic_list_and.intersection(IGNORED_SECTIONS):
-                src_list = taskpool.special_tasks
-            else:
-                src_list = taskpool.tasks
-            for task in src_list:
-                if set(task.topics).issuperset(topic_list_and):
-                    task_list.append(task)
+	if args.topic and WINDOWS:
+		args.topic = [topic.decode('utf-8') for topic in args.topic]
+	if not args.topic:
+		task_list = taskpool.tasks
+	else:
+		task_list = []
+		topic_list_or = [set(topic.split('.')) for topic in arg.topic]
+		for topic_list_and in topic_list_or:
+			if topic_list_and.intersection(IGNORED_SECTIONS):
+				src_list = taskpool.special_tasks
+			else:
+				src_list = taskpool.tasks
+			for task in src_list:
+				if set(task.topics).issuperset(topic_list_and):
+					task_list.append(task)
 
-    task_list = [task for task in task_list if not task.periodics]
+	task_list = [task for task in task_list if not task.periodics]
 
-    if args.unscheduled:
-        task_list = [task for task in task_list if not task.upper_limit]
-    if args.sort:
-        task_list.sort(key = lambda task : task.length)
-        
-    if args.australian:
-        for t in task_list:
-         t.name = t.name.replace("bear", "kangaroo")
-        
-    for task in task_list:
-        print task
-        if args.set_attr:
-            task.add_attr_back(args.set_attr)
-    if not args.no_total:
-        print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
-            sum([task.cost for task in task_list if task.cost]), "rubles gain"
+	if args.unscheduled:
+		task_list = [task for task in task_list if not task.upper_limit]
+	if args.sort:
+		task_list.sort(key = lambda task : task.length)
+		
+	if args.australian:
+		for t in task_list:
+		 t.name = t.name.replace("bear", "kangaroo")
+		
+	for task in task_list:
+		print task
+		if args.set_attr:
+			task.add_attr_back(args.set_attr)
+	if not args.no_total:
+		print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
+			sum([task.cost for task in task_list if task.cost]), "rubles gain"
 
 
 def today(arg):
-    for task in taskpool.today():
-        print task
+	for task in taskpool.today():
+		print task
 
 def test(arg):
-    t = taskpool.tasks[0].taskline
-    t.remove_attr_by_value('don')
-    t.remove_attr_by_value('alala')
-    t.remove_attr_by_value('attr2')
-    t.save()
+	t = taskpool.tasks[0].taskline
+	t.remove_attr_by_value('don')
+	t.remove_attr_by_value('alala')
+	t.remove_attr_by_value('attr2')
+	t.save()
 
 def work(arg):
-    import cmd
-    class WorkCmd(cmd.Cmd):
-        def __init__(self):
-            cmd.Cmd.__init__(self)
-            self.prompt = '>'
+	import cmd
+	class WorkCmd(cmd.Cmd):
+		def __init__(self):
+			cmd.Cmd.__init__(self)
+			self.prompt = '>'
 
-        def do_exit(self, arg):
-            """
-            Exit
-            """
-            print "Have a nice day!"
-            return True
-        def show_tasks(self):
-            for i, task in enumerate(taskpool.tasks):
-                print ("{}) {}".format(i, str(task)))
-        def do_current(self, arg):
-            self.show_tasks()
+		def do_exit(self, arg):
+			"""
+			Exit
+			"""
+			print "Have a nice day!"
+			return True
+		def show_tasks(self):
+			for i, task in enumerate(taskpool.tasks):
+				print ("{}) {}".format(i, str(task)))
+		def do_current(self, arg):
+			self.show_tasks()
 
-    mycmd = WorkCmd()
-    mycmd.cmdloop("You have entered keeper's interactive mode")
+	mycmd = WorkCmd()
+	mycmd.cmdloop("You have entered keeper's interactive mode")
 
 
 def random_tasks(arg):
-    task_list = [task for task in taskpool.tasks if not task.periodics and not task.upper_limit]
-    
-    sample = random.sample(task_list, 10)
-    for task in sample:
-        print task
-    if not args.no_total:
-        print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
+	task_list = [task for task in taskpool.tasks if not task.periodics and not task.upper_limit]
+	
+	sample = random.sample(task_list, 10)
+	for task in sample:
+		print task
+	if not args.no_total:
+		print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
 
 
 def edit(arg):
-    if args.filenames:
-        os.system("gedit "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
-    else:
-        os.system("todo")
+	editors_win = ['notepad']
+	editors_unix = ['gedit', 'kwrite', 'pluma', 'leafpad']
+	if WINDOWS:
+		for editor in editors_win:
+			os.system(editor+" "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+			break
+	elif args.filenames:
+		for editor in editors_unix:
+			os.system(editor+" "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+			continue
+	else:
+		os.system("todo")
 
 
 def show_topics(arg):
-    topics = list(set.union(*[set(task.topics) for task in taskpool.tasks + taskpool.special_tasks]))
-    topics.sort()
-    for topic in topics:
-        print topic
+	topics = list(set.union(*[set(task.topics) for task in taskpool.tasks + taskpool.special_tasks]))
+	topics.sort()
+	for topic in topics:
+		print topic
 
 def done(arg):
-    lists_dir = tasks.get_dir()
-    for filename in arg.files:
-        _from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
-        print "moving {} to {}".format(_from, _to)
-        os.rename(_from, _to)
+	lists_dir = tasks.get_dir()
+	for filename in arg.files:
+		_from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
+		print "moving {} to {}".format(_from, _to)
+		os.rename(_from, _to)
 
 def undo(arg):
-    lists_dir = tasks.get_dir()
-    for filename in arg.files:
-        _from, _to = lists_dir+filename+".done", lists_dir+filename+".todo"
-        print "moving {} to {}".format(_from, _to)
-        os.rename(_from, _to)
+	lists_dir = tasks.get_dir()
+	for filename in arg.files:
+		_from, _to = lists_dir+filename+".done", lists_dir+filename+".todo"
+		print "moving {} to {}".format(_from, _to)
+		os.rename(_from, _to)
 
 parser = argparse.ArgumentParser(description='console timekeeper')
 subparsers = parser.add_subparsers()
@@ -192,11 +205,11 @@ parser_work = subparsers.add_parser('work', help='simple interactive mode')
 parser_work.set_defaults(func=work)
 
 if (len(sys.argv) < 2):
-    args = parser.parse_args(['check'])
+	args = parser.parse_args(['check'])
 elif sys.argv[1] == "current":
-    args = parser.parse_args(['list', 'current'])
+	args = parser.parse_args(['list', 'current'])
 else:
-    args = parser.parse_args()
-    
+	args = parser.parse_args()
+	
 
 args.func(args)

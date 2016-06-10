@@ -121,16 +121,12 @@ def random_tasks(arg):
     if not args.no_total:
         print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
 
-
 def edit(arg):
-    editors_win = ['notepad']
-    editors_unix = ['gedit', 'kwrite', 'pluma', 'leafpad']
     if WINDOWS:
-        for editor in editors_win:
-            os.system(editor+" "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+        os.system(''.join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
     elif args.filenames:
-        for editor in editors_unix:
-            os.system(editor+" "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+        try: os.system('{} {}' .format(os.environ.get('EDITOR'), ''.join([tasks.get_dir()+fn + ".todo" for fn in args.filenames])))
+        except: print 'Set your environment EDIT value with\nexport EDITOR=%your editor%'
     else:
         os.system("todo")
 

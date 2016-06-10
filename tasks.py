@@ -20,8 +20,8 @@ def set_line(filename, lineno, line):
 
 def get_dir():
     if WINDOWS:
-        return os.path.dirname(__file__)+"\\lists\\"
-    return os.path.dirname(__file__)+"/lists/"
+        return os.getcwd()+'\\lists\\'
+    return os.getcwd()+'/lists/'
 
 def get_length(s):
     if '?' in s:

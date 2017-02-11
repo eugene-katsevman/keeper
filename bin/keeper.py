@@ -1,16 +1,19 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-# PYTHON_ARGCOMPLETE_OK
-import tasks
+
+
+import os
 import sys
-import settings
 import argparse
 import random
-from settings import *
 from datetime import datetime
 import platform
-import os
 import errno
+
+keeper_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.insert(0, keeper_dir)
+from keeper import tasks, settings
+
 
 WINDOWS = platform.system() == "Windows"
 
@@ -24,10 +27,8 @@ def mkdir_p(path):
             pass
         else:
             raise
+
 mkdir_p(lists_dir)
-
-
-
 taskpool = tasks.load_all()
 
 def check(arg):    
@@ -65,17 +66,17 @@ def list_topic(arg):
          t.name = t.name.replace("bear", "kangaroo")
         
     for task in task_list:
-        print task
+        print (task)
         if args.set_attr:
             task.add_attr_back(args.set_attr)
     if not args.no_total:
-        print "Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
-            sum([task.cost for task in task_list if task.cost]), "rubles gain"
+        print ("Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
+            sum([task.cost for task in task_list if task.cost]), "rubles gain")
 
 
 def today(arg):
     for task in taskpool.today():
-        print task
+        print (task)
 
 def test(arg):
     t = taskpool.tasks[0].taskline
@@ -95,7 +96,7 @@ def work(arg):
             """
             Exit
             """
-            print "Have a nice day!"
+            print ("Have a nice day!")
             return True
         def show_tasks(self):
             for i, task in enumerate(taskpool.tasks):
@@ -112,9 +113,9 @@ def random_tasks(arg):
     
     sample = random.sample(task_list, 10)
     for task in sample:
-        print task
+        print (task)
     if not args.no_total:
-        print "Total: ", sum([task.length for task in sample if task.length]), "h of worktime"
+        print ("Total: ", sum([task.length for task in sample if task.length]), "h of worktime")
 
 
 def edit(arg):
@@ -128,20 +129,20 @@ def show_topics(arg):
     topics = list(set.union(*[set(task.topics) for task in taskpool.tasks + taskpool.special_tasks]))
     topics.sort()
     for topic in topics:
-        print topic
+        print (topic)
 
 def done(arg):
     lists_dir = tasks.get_dir()
     for filename in arg.files:
         _from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
-        print "moving {} to {}".format(_from, _to)
+        print ("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 
 def undo(arg):
     lists_dir = tasks.get_dir()
     for filename in arg.files:
         _from, _to = lists_dir+filename+".done", lists_dir+filename+".todo"
-        print "moving {} to {}".format(_from, _to)
+        print ("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 
 parser = argparse.ArgumentParser(description='console timekeeper')

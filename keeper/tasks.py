@@ -3,11 +3,13 @@ import os
 import re
 import datetime
 import os.path
-import timespans
 import platform
 
+from . import timespans
+from .settings import *
+
 WINDOWS = platform.system() == 'Windows'
-from settings import *
+
 
 
 def set_line(filename, lineno, line):
@@ -19,7 +21,7 @@ def set_line(filename, lineno, line):
 
 
 def get_dir():
-    return os.path.dirname(__file__)+"/lists/"
+    return os.path.dirname(os.path.abspath(__file__))+"/../lists/"
 
 def get_length(s):
     if '?' in s:
@@ -82,8 +84,6 @@ class Period(object):
                 self.specs.append(part)
         if not self.start_time:
             raise Exception('no start time specified for task')
-        #print self.specs
-        #print self.start_time
         self.task = task
 
     def set_task(self, task):
@@ -162,9 +162,6 @@ class Task:
         return self.__unicode__()
 
     def __unicode__(self):
-        #print self.topic
-        #print self.name
-        #print self.planned_time_to_str()
 
         if not WINDOWS:
             return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], self.topic, self.name, self.planned_time_to_str())
@@ -297,7 +294,7 @@ class TaskList:
                     section_attributes = self.extract_attributes(current_section)
                     current_section = re.sub('\[.*\]', '', current_section)
                     current_section = re.sub('[ ]+', ' ', current_section.strip())
-                    #print section_attributes
+
                 else:
                     attributes = dict()
                     if not line.startswith(' ') and not line.startswith('\t'):
@@ -351,7 +348,7 @@ class TaskList:
                     elif looks_like_periodic(attr):
                         periodics.append(Period(attr))
                     elif attr.startswith('$') or attr.startswith("р"):
-                        #print attr, attr[1:], is_number(attr[1:])
+
                         result['cost'] = float(attr[2:])
                         result['topics'].append('money')
                     elif looks_like_page_count(attr):
@@ -420,19 +417,20 @@ class TaskList:
                 if budget < datetime.timedelta():
                     status = "FUCKUP"
                 now = task.upper_limit
-            if status != 'nominal': print status, task
+            if status != 'nominal':
+                print (status, task)
         assigned_time = sum([datetime.timedelta(hours = task.length) for task in limited_tasks], datetime.timedelta())
-        print assigned_time, " time scheduled"
-        print budget, " unscheduled worktime left"
+        print (assigned_time, " time scheduled")
+        print (budget, " unscheduled worktime left")
         unbound_time = sum([datetime.timedelta(hours = task.length) for task in unbound_tasks], datetime.timedelta())
-        print "All other tasks are", unbound_time
+        print ("All other tasks are", unbound_time)
         left = (budget - unbound_time).total_seconds()/60.0/60
-        print abs(left), "h of unassigned time" if left > 0 else "h shortage"
+        print (abs(left), "h of unassigned time" if left > 0 else "h shortage")
 
         if unbound_time > budget:
-            print "You're short of time. Either limit some unbound tasks, or postpone some of limited"
+            print ("You're short of time. Either limit some unbound tasks, or postpone some of limited")
         else:
-            print "NOMINAL"
+            print ("NOMINAL")
 
     def scheduled(self, date_from = None):
         if date_from is None:
@@ -440,7 +438,7 @@ class TaskList:
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
         limited_tasks.sort(key = lambda task : task.upper_limit)
         for task in limited_tasks:
-            print task
+            print (task)
             
 def load_all():
     taskpool = TaskList()
@@ -451,8 +449,8 @@ def load_all():
     return taskpool
 
 if __name__== "__main__":
-     print TaskList().special_time(datetime.datetime.now(), datetime.datetime.now() + datetime.timedelta(days = 1)).seconds/3600
+     print (TaskList().special_time(datetime.datetime.now(), datetime.datetime.now() + datetime.timedelta(days = 1)).seconds/3600)
      
-     print looks_like_length('100ч')
-     print "100ч"[:-1]
-     print get_length('100ч')
+     print (looks_like_length('100ч'))
+     print ("100ч"[:-1])
+     print (get_length('100ч'))

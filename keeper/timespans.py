@@ -113,8 +113,7 @@ if __name__=="__main__":
                                         ])
     span_set2 = TimeSpanSet(_from = datetime.datetime(2015,5,1,5), _to = datetime.datetime(2015,5,1,7))
     span_set = span_set.converge()
-    print span_set
-    print span_set + span_set2
-    print span_set - span_set2
-    #print TimeSpan(datetime.datetime(2015, 5, 1, 0), datetime.datetime(2015, 5, 1, 4)) - \
-    #      TimeSpan(datetime.datetime(2015, 5, 1, 2), datetime.datetime(2015, 5, 1, 3))
+    print (span_set)
+    print (span_set + span_set2)
+    print (span_set - span_set2)
+

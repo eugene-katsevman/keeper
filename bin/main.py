@@ -46,7 +46,7 @@ def list_topic(arg):
         task_list = []
         topic_list_or = [set(topic.split('.')) for topic in arg.topic]
         for topic_list_and in topic_list_or:
-            if topic_list_and.intersection(IGNORED_SECTIONS):
+            if topic_list_and.intersection(settings.IGNORED_SECTIONS):
                 src_list = taskpool.special_tasks
             else:
                 src_list = taskpool.tasks

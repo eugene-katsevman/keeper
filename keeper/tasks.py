@@ -19,7 +19,8 @@ def set_line(filename, lineno, line):
     with open(filename, 'w') as file:
         file.writelines( data )
 
-
+    
+    
 def get_dir():
     return os.path.dirname(os.path.abspath(__file__))+"/../lists/"
 

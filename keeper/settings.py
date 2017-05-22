@@ -2,7 +2,7 @@
 
 CONTEXTS = {"восстания", "волгоградская", "шмидта", "работа", "спортзал", "университет"}
 
-IGNORED_SECTIONS = {'done', 'debts', 'delegated', 'wontdo', 'library', 'scratch', 'optional', 'paid', 'ext', 'external', 'extern'}
+IGNORED_SECTIONS = {'done', 'debts', 'delegated', 'wontdo', 'library', 'scratch', 'optional', 'paid', 'ext', 'external', 'extern', 'library'}
 
 SYNONYMS = {'ext':'external'}
 

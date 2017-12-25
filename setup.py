@@ -19,15 +19,7 @@ if sys.argv[-1] == 'publish':
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     readme = f.read()
 
-packages = [
-    'keeper',
-]
 
-package_data = {
-}
-
-requires = [
-]
 
 classifiers = [
         'Development Status :: 3 - Alpha',
@@ -45,9 +37,9 @@ setup(
     version='0.2',
     description='Keeper the console time management tool',
     long_description=readme,
-    packages=packages,
+    packages=['keeper'],
     package_data=package_data,
-    install_requires=requires,
+    install_requires=['timespans'],
     author='Eugene Katsevman',
     author_email='python@chrisstreeter.com',
     url='https://github.com/eugene-katsevman/keeper',

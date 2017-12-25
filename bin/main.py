@@ -120,9 +120,9 @@ def random_tasks(arg):
 
 def edit(arg):
     if args.filenames:
-        os.system("xed "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+        os.system("gedit "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
     else:
-        os.system("xed "+tasks.get_dir()+"*.todo")
+        os.system("gedit "+tasks.get_dir()+"*.todo")
 
 
 def show_topics(arg):

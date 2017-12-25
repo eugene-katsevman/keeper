@@ -4,13 +4,21 @@ import re
 import datetime
 import os.path
 import platform
-
-from . import timespans
+import errno
+import timespans
 from .settings import *
 
 WINDOWS = platform.system() == 'Windows'
 
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 def set_line(filename, lineno, line):
     with open(filename, 'r') as file:
@@ -22,7 +30,7 @@ def set_line(filename, lineno, line):
     
     
 def get_dir():
-    return os.path.dirname(os.path.abspath(__file__))+"/../lists/"
+    return os.path.expanduser('~/.keeper')+'/'
 
 def get_length(s):
     if '?' in s:
@@ -107,9 +115,9 @@ class Period(object):
         return result
 
     def get_timespan_for_day(self, day):
-        _from = datetime.datetime.combine(day, self.start_time)
-        return timespans.TimeSpan(_from = _from,
-                                  _to = _from + datetime.timedelta(hours = self.task.length))
+        start = datetime.datetime.combine(day, self.start_time)
+        return timespans.TimeSpan(start=start,
+                                  end=start + datetime.timedelta(hours=self.task.length))
 
 class Task:
     def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None, lineno=None, line=None):
@@ -148,15 +156,15 @@ class Task:
 
     def generate_timespanset(self, start, end):
         if not self.periodics:
-            return timespans.TimeSpanSet(self.at, self.upper_limit)
+            return timespans.TimeSpanSet(timespans.TimeSpan(self.at, self.upper_limit))
         spans = []
         for period in self.periodics:
             for day in days(start.date() - datetime.timedelta(days=1), end.date()+datetime.timedelta(days=1)):
                 if period.has_day(day):
                     spans.append(period.get_timespan_for_day(day))
-        spanset = (timespans.TimeSpanSet(timespans = spans).converge()
-                  - timespans.TimeSpanSet(_from=None, _to=start)) \
-                  - timespans.TimeSpanSet(_from=end, _to=None)
+        spanset = (timespans.TimeSpanSet(spans)
+                  -timespans.TimeSpanSet(timespans.TimeSpan(None, start))
+                  -timespans.TimeSpanSet(timespans.TimeSpan(end, None)))
         return spanset.converge()
 
     def __str__(self):        

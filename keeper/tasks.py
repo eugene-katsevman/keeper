@@ -3,12 +3,10 @@ import os
 import re
 import datetime
 import os.path
-import platform
 import errno
 import timespans
-from .settings import *
 
-WINDOWS = platform.system() == 'Windows'
+from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS
 
 
 def mkdir_p(path):
@@ -20,17 +18,18 @@ def mkdir_p(path):
         else:
             raise
 
+
 def set_line(filename, lineno, line):
     with open(filename, 'r') as file:
         data = file.readlines()
     data[lineno] = line + '\n'
     with open(filename, 'w') as file:
-        file.writelines( data )
+        file.writelines(data)
 
-    
     
 def get_dir():
     return os.path.expanduser('~/.keeper')+'/'
+
 
 def get_length(s):
     if '?' in s:
@@ -40,14 +39,18 @@ def get_length(s):
     elif s.endswith('m') or s.endswith('м'):
         return float(re.findall('\d*\.?\d+', s)[0]) / 60
 
+
 def looks_like_date(s):
     return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d', s)
+
 
 def looks_like_datetime(s):
     return [] != re.findall('^\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
 
+
 def looks_like_time(s):
     return [] != re.findall('^\d\d?:\d\d?', s)
+
 
 def looks_like_till_datetime(s):
     return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
@@ -56,14 +59,18 @@ def looks_like_till_datetime(s):
 def looks_like_till_date(s):
     return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d', s)
 
+
 def looks_like_length(s):
     return [] != re.findall('\d+[hmчм]|\?[hmчм]', s)
+
 
 def looks_like_periodic(s):
     return s.startswith("+")
 
+
 def looks_like_page_count(s):
     return [] != re.findall('\d+p', s)
+
 
 def is_number(s):
     try:
@@ -72,15 +79,16 @@ def is_number(s):
     except ValueError:
         return False
 
+
 def days(datefrom, dateto):
     datenow = datefrom
     while datenow < dateto:
         yield datenow
-        datenow += datetime.timedelta(days = 1)
+        datenow += datetime.timedelta(days=1)
 
 
 class Period(object):
-    def __init__(self, specification = None, task = None):
+    def __init__(self, specification=None, task=None):
 
         self.specification = specification[1:]
         parts = self.specification.strip().split()
@@ -105,13 +113,13 @@ class Period(object):
         :return:
         """
         result = not self.specs or \
-            any(d in self.specs for d in ["понедельник", 'Monday', 'monday'])and day.weekday() == 0 or \
-            any(d in self.specs for d in ["вторник",'Tuesday', 'tuesday']) and day.weekday() == 1 or \
-            any(d in self.specs for d in ["среда",'Wednesday', 'wednesday']) and day.weekday() == 2 or \
-            any(d in self.specs for d in ["четверг",'Thursday', 'thursday'])  and day.weekday() == 3 or \
-            any(d in self.specs for d in ["пятница",'Friday', 'friday'])  and day.weekday() == 4 or \
-            any(d in self.specs for d in ["суббота",'Saturday', 'saturday'])  and day.weekday() == 5 or \
-            any(d in self.specs for d in ["воскресенье",'Sunday', 'sunday']) and day.weekday() == 6
+            any(d in self.specs for d in ['понедельник', 'Monday', 'monday']) and day.weekday() == 0 or \
+            any(d in self.specs for d in ['вторник', 'Tuesday', 'tuesday']) and day.weekday() == 1 or \
+            any(d in self.specs for d in ['среда', 'Wednesday', 'wednesday']) and day.weekday() == 2 or \
+            any(d in self.specs for d in ['четверг', 'Thursday', 'thursday']) and day.weekday() == 3 or \
+            any(d in self.specs for d in ['пятница', 'Friday', 'friday']) and day.weekday() == 4 or \
+            any(d in self.specs for d in ['суббота', 'Saturday', 'saturday']) and day.weekday() == 5 or \
+            any(d in self.specs for d in ['воскресенье', 'Sunday', 'sunday']) and day.weekday() == 6
         return result
 
     def get_timespan_for_day(self, day):
@@ -119,8 +127,10 @@ class Period(object):
         return timespans.TimeSpan(start=start,
                                   end=start + datetime.timedelta(hours=self.task.length))
 
+
 class Task:
-    def __init__(self, name = "", length = 1, topic = None, topics = [], at = None, till = None, periodics = None, cost = None, file=None, lineno=None, line=None):
+    def __init__(self, name="", length=1, topic=None, topics=None, at=None, till=None,
+                 periodics=None, cost=None, file=None, lineno=None, line=None):
         self.taskline = TaskLine(line, lineno, file)
         self.lineno = lineno
         self.line = line
@@ -134,7 +144,7 @@ class Task:
             for period in self.periodics:
                 period.set_task(self)
 
-        self.topics = topics
+        self.topics = topics or []
         if topic and not topics:
             self.topics.append(topic)
             
@@ -146,13 +156,11 @@ class Task:
         elif self.till is not None:
             self.upper_limit = self.till
 
-
     def planned_time_to_str(self):
         if self.length is None:
             return 'unknown'
         else:
             return str(self.length) + 'h'
-
 
     def generate_timespanset(self, start, end):
         if not self.periodics:
@@ -163,31 +171,27 @@ class Task:
                 if period.has_day(day):
                     spans.append(period.get_timespan_for_day(day))
         spanset = (timespans.TimeSpanSet(spans)
-                  -timespans.TimeSpanSet(timespans.TimeSpan(None, start))
-                  -timespans.TimeSpanSet(timespans.TimeSpan(end, None)))
+                   - timespans.TimeSpanSet(timespans.TimeSpan(None, start))
+                   - timespans.TimeSpanSet(timespans.TimeSpan(end, None)))
         return spanset.converge()
 
     def __str__(self):        
         return self.__unicode__()
 
     def __unicode__(self):
+        return '<{}> [{}] {} [{}]'.format(os.path.splitext(os.path.basename(self.file))[0],
+                                          self.topic, self.name, self.planned_time_to_str())
 
-        if not WINDOWS:
-            return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], self.topic, self.name, self.planned_time_to_str())
-        else:
-            topic = self.topic
-            if not topic:
-                topic = "None"
-            return "<{}> [{}] {} [{}]".format(os.path.splitext(os.path.basename(self.file))[0], topic.encode("cp866"), self.name.encode('cp866'), self.planned_time_to_str().encode('cp866'))
-        
 
 class Attr(object):
     def __init__(self, location, text):
         self.location = location
         self.text = text
         self.value = text.strip()
+
     def __repr__(self):
         return str((self.location, self.text, self.value))
+
 
 class AttrCollection(object):
     def __init__(self, location, text):
@@ -199,13 +203,15 @@ class AttrCollection(object):
             next_index = text.find(',', index)
             if next_index == -1:
                 next_index = len(text)
-            self.attrs.append(Attr(location + index, text[index:next_index] ))
+            self.attrs.append(Attr(location + index, text[index:next_index]))
             index = next_index + 1
+
     def __repr__(self):
         return str(self.attrs)
 
     def is_empty(self):
         return self.attrs == [] or len(self.attrs) == 1 and self.attrs[0].value == ''
+
 
 class TaskLine(object):
     """
@@ -232,7 +238,6 @@ class TaskLine(object):
     def __str__(self):
         return "{} with attr collections ({})".format(self.line, self.attr_collections)
 
-
     def has_attr(self, value):
         for collection in self.attr_collections:
             for attr in collection.attrs:
@@ -249,19 +254,20 @@ class TaskLine(object):
         :param value: new attribute to add to the line
         :return:
         """
-        if self.attr_collections == []:
+        if not self.attr_collections:
             self.line += ' [{}]'.format(value)
         else:
             collection = self.attr_collections[-1]
             self.line = self.line[:collection.location+len(collection.text)] + ", " + value + \
-                self.line[collection.location+len(collection.text) :]
+                self.line[collection.location+len(collection.text):]
         self._parse()
 
     def remove_attr_by_value(self, value):
         for collection in reversed(self.attr_collections):
             for i, attr in enumerate(reversed(collection.attrs)):
                 if attr.value == value:
-                    self.line = self.line[:attr.location]+self.line[attr.location+len(attr.text)+ (1 if i!=0 else 0):]
+                    self.line = self.line[:attr.location]+self.line[attr.location+len(attr.text) +
+                                                                    (1 if i != 0 else 0):]
         self._parse()
 
         for collection in reversed(self.attr_collections):
@@ -272,8 +278,9 @@ class TaskLine(object):
     def save(self):
         set_line(self.filename, self.lineno, self.line)
 
+
 class TaskList:
-    def __init__(self, filename = None):
+    def __init__(self, filename=None):
         self.tasks = []
         self.special_tasks = []
         if filename:
@@ -285,13 +292,11 @@ class TaskList:
         in_comment = False
         for lineno, line in enumerate(open(filename).readlines()):
             line = line.rstrip()            
-            if WINDOWS:                
-                line = line.decode('windows-1251')
-                
+
             if line:
                 if in_comment and "*/" in line:
-                  in_comment = False
-                  continue
+                    in_comment = False
+                    continue
                 if in_comment:
                     continue
                 if line.strip().startswith('//') or line.strip().startswith('#'):
@@ -366,100 +371,87 @@ class TaskList:
                         if "hard" in attributes:
                             result['length'] = page_count * HARD_PAGE_TIME
                         else:
-                            result['length'] = page_count * SIMPLE_PAGE_TIME
+                            result['length'] = page_count * EASY_PAGE_TIME
                     else:
                         result['topics'].append(attr)        
                 result['periodics'] = periodics
             return result                        
         except Exception as e:
-            raise Exception("error while parsing {}: ".format(line) + e.message)
+            raise Exception("error while parsing {}: {}".format(line, str(e)))
 
     def today(self):
-        return [task for task in self.tasks if task.upper_limit is not None and task.upper_limit.date()<=datetime.date.today()]
+        return [task for task in self.tasks
+                if task.upper_limit is not None and task.upper_limit.date() <= datetime.date.today()]
         
     def strict_at(self, date):
         return [task for task in self.tasks if task.at == date]
     
     def till(self, date):
-        return [task for task in self.tasks if task.till != None and task.till<=date] + self.strict_at(date)
+        return [task for task in self.tasks if task.till is not None and task.till <= date] + self.strict_at(date)
 
     def is_sleeping_time(self, time):
         start_sleep = datetime.datetime.combine(time.date(), datetime.time(hour=23))
         end_sleep = datetime.datetime.combine(time.date(), datetime.time(hour=7))
         return time < end_sleep or time > start_sleep
 
-
     def special_time(self, time_from, time_to):
-        """
-        result = datetime.timedelta()
-        while time_from < time_to:
-            if self.is_sleeping_time(time_from):
-                result += datetime.timedelta(hours=1)
-            time_from += datetime.timedelta(hours=1)
-        return result
-        """
-        span = timespans.TimeSpanSet(timespans = [])
+        span = timespans.TimeSpanSet()
 
         for t in self.tasks:
             if t.periodics:
                 span += t.generate_timespanset(time_from, time_to)
         return span.length()
 
-    def check(self, date_from = None):
+    def check(self, date_from=None):
         if date_from is None:
-            date_from =  datetime.datetime.now()
+            date_from = datetime.datetime.now()
 
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None and not task.periodics]
-        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None and not task.periodics]
-        limited_tasks.sort(key = lambda task : task.upper_limit)
+        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None
+                         and not task.periodics]
+        limited_tasks.sort(key=lambda task: task.upper_limit)
 
         budget = datetime.timedelta()
         now = date_from
         for task in limited_tasks:
-            status = "nominal"
-            if task.upper_limit<date_from:
-                status = "OVERDUE"
+            status = 'nominal'
+            if task.upper_limit < date_from:
+                status = 'OVERDUE'
             else:
                 budget += task.upper_limit - now
                 budget -= self.special_time(now, task.upper_limit)
                 budget -= datetime.timedelta(hours=task.length)
                 if budget < datetime.timedelta():
-                    status = "FUCKUP"
+                    status = 'FUCKUP'
                 now = task.upper_limit
             if status != 'nominal':
-                print (status, task)
-        assigned_time = sum([datetime.timedelta(hours = task.length) for task in limited_tasks], datetime.timedelta())
-        print (assigned_time, " time scheduled")
-        print (budget, " unscheduled worktime left")
-        unbound_time = sum([datetime.timedelta(hours = task.length) for task in unbound_tasks], datetime.timedelta())
-        print ("All other tasks are", unbound_time)
+                print(status, task)
+        assigned_time = sum([datetime.timedelta(hours=task.length) for task in limited_tasks], datetime.timedelta())
+        print(assigned_time, ' time scheduled')
+        print(budget, ' unscheduled worktime left')
+        unbound_time = sum([datetime.timedelta(hours=task.length) for task in unbound_tasks], datetime.timedelta())
+        print('All other tasks are', unbound_time)
         left = (budget - unbound_time).total_seconds()/60.0/60
-        print (abs(left), "h of unassigned time" if left > 0 else "h shortage")
+        print(abs(left), 'h of unassigned time' if left > 0 else 'h shortage')
 
         if unbound_time > budget:
-            print ("You're short of time. Either limit some unbound tasks, or postpone some of limited")
+            print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited')
         else:
-            print ("NOMINAL")
+            print('NOMINAL')
 
-    def scheduled(self, date_from = None):
+    def scheduled(self, date_from=None):
         if date_from is None:
-            date_from =  datetime.datetime.now()
+            date_from = datetime.datetime.now()
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None]
-        limited_tasks.sort(key = lambda task : task.upper_limit)
+        limited_tasks.sort(key=lambda task: task.upper_limit)
         for task in limited_tasks:
-            print (task)
-            
+            print(task)
+
+
 def load_all():
-    taskpool = TaskList()
+    task_pool = TaskList()
     lists_dir = get_dir()
     for filename in os.listdir(lists_dir):
-        if filename.endswith(".todo"):
-            taskpool.load_from_file(lists_dir+filename)
-    return taskpool
-
-if __name__== "__main__":
-     print (TaskList().special_time(datetime.datetime.now(), datetime.datetime.now() + datetime.timedelta(days = 1)).seconds/3600)
-     
-     print (looks_like_length('100ч'))
-     print ("100ч"[:-1])
-     print (get_length('100ч'))
+        if filename.endswith('.todo'):
+            task_pool.load_from_file(lists_dir+filename)
+    return task_pool

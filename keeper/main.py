@@ -5,16 +5,8 @@ import os
 import sys
 import argparse
 import random
-from datetime import datetime
-import platform
-
 
 from keeper import tasks, settings
-
-
-WINDOWS = platform.system() == "Windows"
-
-
 
 def main():
     """
@@ -22,7 +14,6 @@ def main():
     """
     
     lists_dir = tasks.get_dir()
-
 
     tasks.mkdir_p(lists_dir)
     taskpool = tasks.load_all()
@@ -34,8 +25,6 @@ def main():
         taskpool.scheduled()
 
     def list_topic(arg):
-        if args.topic and WINDOWS:
-            args.topic = [topic.decode('windows-1251') for topic in args.topic]
         if not args.topic:
             task_list = taskpool.tasks
         else:
@@ -66,13 +55,11 @@ def main():
             if args.set_attr:
                 task.add_attr_back(args.set_attr)
         if not args.no_total:
-            print ("Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime", \
-                sum([task.cost for task in task_list if task.cost]), "rubles gain")
-
+            print ("Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime")
 
     def today(arg):
         for task in taskpool.today():
-            print (task)
+            print(task)
 
     def test(arg):
         t = taskpool.tasks[0].taskline
@@ -103,7 +90,6 @@ def main():
         mycmd = WorkCmd()
         mycmd.cmdloop("You have entered keeper's interactive mode")
 
-
     def random_tasks(arg):
         task_list = [task for task in taskpool.tasks if not task.periodics and not task.upper_limit]
         
@@ -113,13 +99,11 @@ def main():
         if not args.no_total:
             print ("Total: ", sum([task.length for task in sample if task.length]), "h of worktime")
 
-
     def edit(arg):
         if args.filenames:
-            os.system("gedit "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
+            os.system(settings.EDITOR + " "+" ".join([tasks.get_dir()+fn + ".todo" for fn in args.filenames]))
         else:
-            os.system("gedit "+tasks.get_dir()+"*.todo")
-
+            os.system(settings.EDITOR + " "+tasks.get_dir()+"*.todo")
 
     def show_topics(arg):
         topics = list(set.union(*[set(task.topics) for task in taskpool.tasks + taskpool.special_tasks]))
@@ -158,7 +142,6 @@ def main():
     parser_list.add_argument("--set_attr", help = "set custom attr")
     parser_list.set_defaults(func=list_topic, topic = None)
 
-
     parser_today = subparsers.add_parser('today', help='Lists tasks for today')
     parser_today.set_defaults(func=today)
 
@@ -188,12 +171,11 @@ def main():
     parser_work = subparsers.add_parser('work', help='simple interactive mode')
     parser_work.set_defaults(func=work)
 
-    if (len(sys.argv) < 2):
+    if len(sys.argv) < 2:
         args = parser.parse_args(['check'])
     elif sys.argv[1] == "current":
         args = parser.parse_args(['list', 'current'])
     else:
         args = parser.parse_args()
-        
 
     args.func(args)

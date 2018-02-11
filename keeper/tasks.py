@@ -173,7 +173,7 @@ class Task:
         spanset = (timespans.TimeSpanSet(spans)
                    - timespans.TimeSpanSet(timespans.TimeSpan(None, start))
                    - timespans.TimeSpanSet(timespans.TimeSpan(end, None)))
-        return spanset.converge()
+        return spanset
 
     def __str__(self):        
         return self.__unicode__()
@@ -400,7 +400,7 @@ class TaskList:
         for t in self.tasks:
             if t.periodics:
                 span += t.generate_timespanset(time_from, time_to)
-        return span.length()
+        return span.duration
 
     def check(self, date_from=None):
         if date_from is None:

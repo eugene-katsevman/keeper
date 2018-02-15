@@ -468,20 +468,21 @@ class TaskList:
     def check(self, date_from=None):
         result = self._check(date_from)
 
-        for task in result._overdue:
-            print('OVERDUE', task)
-        for task in result._risky:
-            print('RISKY', task)
 
         print('Assigned time (how long limited tasks will take):', result.assigned_time)
         print('Budget (time total balance for limited tasks):', result.budget)
         print('Unbound time (how long free tasks will take):', result.unbound_time)
-        print('Time Left (Can we do both limited and free tasks?):', result.left)
+        print('Free lime left till latest limited task(Can we do both limited and free tasks?):', result.left)
         if result.left < 0:
             print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited',)
-        else:
+        print()
+        if not result._overdue and not result._risky:
             print('We\'re good')
-
+        else:
+            for task in result._overdue:
+                print('OVERDUE', task)
+            for task in result._risky:
+                print('RISKY', task)
 
     def scheduled(self, date_from=None):
         if date_from is None:

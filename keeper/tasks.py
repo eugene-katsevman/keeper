@@ -6,6 +6,7 @@ import os.path
 import errno
 import timespans
 
+from itertools import starmap
 from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS
 
 
@@ -162,6 +163,12 @@ class Task:
         else:
             return str(self.length) + 'h'
 
+    def planned_upper_limit(self, date_from):
+        if self.upper_limit < date_from:
+            return date_from + datetime.timedelta(hours=self.length)
+        else:
+            return self.upper_limit
+
     def generate_timespanset(self, start, end):
         if not self.periodics:
             return timespans.TimeSpanSet(timespans.TimeSpan(self.at, self.upper_limit))
@@ -182,6 +189,8 @@ class Task:
         return '<{}> [{}] {} [{}]'.format(os.path.splitext(os.path.basename(self.file))[0],
                                           self.topic, self.name, self.planned_time_to_str())
 
+    def __repr__(self):
+        return '[{}] {} [{}]'.format(self.topic, self.name, self.planned_time_to_str())
 
 class Attr(object):
     def __init__(self, location, text):
@@ -279,6 +288,22 @@ class TaskLine(object):
         set_line(self.filename, self.lineno, self.line)
 
 
+class CheckResult:
+    def __init__(self):
+        self._overdue = []
+        self._risky = []
+        self.assigned_time = 0
+        self.budget = 0
+        self.unbound_time = 0
+        self.left = 0
+
+
+    def overdue(self, task):
+        self._overdue.append(task)
+
+    def risky(self, task):
+        self._risky.append(task)
+
 class TaskList:
     def __init__(self, filename=None):
         self.tasks = []
@@ -310,10 +335,11 @@ class TaskList:
                     current_section = re.sub('[ ]+', ' ', current_section.strip())
 
                 else:
-                    attributes = dict()
+
                     if not line.startswith(' ') and not line.startswith('\t'):
                         current_section = None
                         section_attributes = dict()
+                    attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(self.extract_attributes(line))
                     attributes['line'] = line
@@ -327,10 +353,13 @@ class TaskList:
                         attributes['topics'].append(current_section)
 
                     task = Task(**attributes)
-                    if not set(attributes['topics']).intersection(set(IGNORED_SECTIONS)):
-                        self.tasks.append(task)
-                    else:
-                        self.special_tasks.append(task)
+                    self.add_task(task)
+
+    def add_task(self, task):
+        if not set(task.topics).intersection(set(IGNORED_SECTIONS)):
+            self.tasks.append(task)
+        else:
+            self.special_tasks.append(task)
 
     @staticmethod
     def extract_attributes(line):
@@ -379,6 +408,12 @@ class TaskList:
         except Exception as e:
             raise Exception("error while parsing {}: {}".format(line, str(e)))
 
+    def task_from_line(self, line):
+
+        attributes = self.extract_attributes(line)
+        attributes['line'] = line
+        return Task(**attributes)
+
     def today(self):
         return [task for task in self.tasks
                 if task.upper_limit is not None and task.upper_limit.date() <= datetime.date.today()]
@@ -402,42 +437,51 @@ class TaskList:
                 span += t.generate_timespanset(time_from, time_to)
         return span.duration
 
-    def check(self, date_from=None):
+    def _check(self, date_from=None):
         if date_from is None:
             date_from = datetime.datetime.now()
 
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None and not task.periodics]
         unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None
                          and not task.periodics]
-        limited_tasks.sort(key=lambda task: task.upper_limit)
+        limited_tasks.sort(key=lambda task: task.planned_upper_limit(date_from))
 
         budget = datetime.timedelta()
         now = date_from
-        for task in limited_tasks:
-            status = 'nominal'
-            if task.upper_limit < date_from:
-                status = 'OVERDUE'
-            else:
-                budget += task.upper_limit - now
-                budget -= self.special_time(now, task.upper_limit)
-                budget -= datetime.timedelta(hours=task.length)
-                if budget < datetime.timedelta():
-                    status = 'FUCKUP'
-                now = task.upper_limit
-            if status != 'nominal':
-                print(status, task)
-        assigned_time = sum([datetime.timedelta(hours=task.length) for task in limited_tasks], datetime.timedelta())
-        print(assigned_time, ' time scheduled')
-        print(budget, ' unscheduled worktime left')
-        unbound_time = sum([datetime.timedelta(hours=task.length) for task in unbound_tasks], datetime.timedelta())
-        print('All other tasks are', unbound_time)
-        left = (budget - unbound_time).total_seconds()/60.0/60
-        print(abs(left), 'h of unassigned time' if left > 0 else 'h shortage')
+        result = CheckResult()
 
-        if unbound_time > budget:
-            print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited')
+        for task in limited_tasks:
+            if task.upper_limit < date_from:
+                result.overdue(task)
+            budget += task.planned_upper_limit(date_from) - now
+            budget -= self.special_time(now, task.planned_upper_limit(date_from))
+            budget -= datetime.timedelta(hours=task.length)
+            if budget < datetime.timedelta():
+                result.risky(task)
+            now = task.upper_limit
+        result.assigned_time = sum([datetime.timedelta(hours=task.length) for task in limited_tasks], datetime.timedelta())
+        result.budget = budget
+        result.unbound_time = sum([datetime.timedelta(hours=task.length) for task in unbound_tasks], datetime.timedelta())
+        result.left = (budget - result.unbound_time).total_seconds()/60.0/60
+        return result
+
+    def check(self, date_from=None):
+        result = self._check(date_from)
+
+        for task in result._overdue:
+            print('OVERDUE', task)
+        for task in result._risky:
+            print('RISKY', task)
+
+        print('Assigned time (how long limited tasks will take):', result.assigned_time)
+        print('Budget (time total balance for limited tasks):', result.budget)
+        print('Unbound time (how long free tasks will take):', result.unbound_time)
+        print('Time Left (Can we do both limited and free tasks?):', result.left)
+        if result.left < 0:
+            print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited',)
         else:
-            print('NOMINAL')
+            print('We\'re good')
+
 
     def scheduled(self, date_from=None):
         if date_from is None:

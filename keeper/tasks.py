@@ -6,7 +6,6 @@ import os.path
 import errno
 import timespans
 
-from itertools import starmap
 from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS
 
 
@@ -293,7 +292,7 @@ class CheckResult:
         self._overdue = []
         self._risky = []
         self.assigned_time = 0
-        self.budget = 0
+        self.balance = 0
         self.unbound_time = 0
         self.left = 0
 
@@ -367,7 +366,7 @@ class TaskList:
             result = dict()
             result['name'] = line.strip()
             result['topics'] = []
-            times = re.findall('\d+[hm]|\?[hm]', line)
+            times = re.findall('\d+[чмhm]|\?[чмhm]', line)
             if times:
                 time = times[0]
                 result['length'] = get_length(time)
@@ -446,23 +445,23 @@ class TaskList:
                          and not task.periodics]
         limited_tasks.sort(key=lambda task: task.planned_upper_limit(date_from))
 
-        budget = datetime.timedelta()
+        balance = datetime.timedelta()
         now = date_from
         result = CheckResult()
 
         for task in limited_tasks:
             if task.upper_limit < date_from:
                 result.overdue(task)
-            budget += task.planned_upper_limit(date_from) - now
-            budget -= self.special_time(now, task.planned_upper_limit(date_from))
-            budget -= datetime.timedelta(hours=task.length)
-            if budget < datetime.timedelta():
+            balance += task.planned_upper_limit(date_from) - now
+            balance -= self.special_time(now, task.planned_upper_limit(date_from))
+            balance -= datetime.timedelta(hours=task.length)
+            if balance < datetime.timedelta():
                 result.risky(task)
             now = task.upper_limit
         result.assigned_time = sum([datetime.timedelta(hours=task.length) for task in limited_tasks], datetime.timedelta())
-        result.budget = budget
+        result.balance = balance
         result.unbound_time = sum([datetime.timedelta(hours=task.length) for task in unbound_tasks], datetime.timedelta())
-        result.left = (budget - result.unbound_time).total_seconds()/60.0/60
+        result.left = (balance - result.unbound_time).total_seconds()/60.0/60
         return result
 
     def check(self, date_from=None):
@@ -470,9 +469,9 @@ class TaskList:
 
 
         print('Assigned time (how long limited tasks will take):', result.assigned_time)
-        print('Budget (time total balance for limited tasks):', result.budget)
+        print('Balance (time total balance for limited tasks):', result.balance)
         print('Unbound time (how long free tasks will take):', result.unbound_time)
-        print('Free lime left till latest limited task(Can we do both limited and free tasks?):', result.left)
+        print('Free time left till latest limited task(Can we do both limited and free tasks?):', result.left)
         if result.left < 0:
             print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited',)
         print()

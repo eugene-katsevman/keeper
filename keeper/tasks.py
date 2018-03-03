@@ -31,7 +31,7 @@ def get_dir():
     return os.path.expanduser('~/.keeper')+'/'
 
 
-def get_length(s):
+def get_duration(s):
     if '?' in s:
         return None
     elif s.endswith('h') or s.endswith('ч'):
@@ -60,8 +60,12 @@ def looks_like_till_date(s):
     return [] != re.findall('^<\d\d?\.\d\d?\.\d\d\d\d', s)
 
 
-def looks_like_length(s):
-    return [] != re.findall('\d+[hmчм]|\?[hmчм]', s)
+def looks_like_duration(s):
+    return [] != re.findall('^\w*\d+[hmчм]|\?[hmчм]', s)
+
+
+def looks_like_spent_time(s):
+    return [] != re.findall('spent (\d+[hmчм]|\?[hmчм])', s)
 
 
 def looks_like_periodic(s):
@@ -125,21 +129,23 @@ class Period(object):
     def get_timespan_for_day(self, day):
         start = datetime.datetime.combine(day, self.start_time)
         return timespans.TimeSpan(start=start,
-                                  end=start + datetime.timedelta(hours=self.task.length))
+                                  end=start + datetime.timedelta(hours=self.task.duration))
 
 
 class Task:
-    def __init__(self, name="", length=1, topic=None, topics=None, at=None, till=None,
-                 periodics=None, cost=None, file=None, lineno=None, line=None):
+    def __init__(self, name="", duration=1, topic=None, topics=None, at=None, till=None,
+                 periodics=None, cost=None, file=None, lineno=None, line=None, spent=0):
         self.taskline = TaskLine(line, lineno, file)
         self.lineno = lineno
         self.line = line
         self.name = name
-        self.length = length
+        self.duration = duration
         self.topic = topic
         self.cost = cost
         self.file = file
         self.periodics = periodics
+        self.spent = spent
+
         if self.periodics:
             for period in self.periodics:
                 period.set_task(self)
@@ -157,14 +163,18 @@ class Task:
             self.upper_limit = self.till
 
     def planned_time_to_str(self):
-        if self.length is None:
+        if self.duration is None:
             return 'unknown'
         else:
-            return str(self.length) + 'h'
+            return str(self.duration) + 'h'
+
+    @property
+    def duration_left(self):
+        return self.duration - self.spent
 
     def planned_upper_limit(self, date_from):
         if self.upper_limit < date_from:
-            return date_from + datetime.timedelta(hours=self.length)
+            return date_from + datetime.timedelta(hours=self.duration_left)
         else:
             return self.upper_limit
 
@@ -236,6 +246,10 @@ class TaskLine(object):
             end_index = self.line.find(']', index)
             self.attr_collections.append(AttrCollection(index+1, self.line[index+1:end_index]))
             index = self.line.find('[', end_index)
+
+    @property
+    def pure_name(self):
+        return re.sub('\[.*?\]', '', self.line)
 
     def __init__(self, line, lineno, filename):
         self.line = line
@@ -366,10 +380,10 @@ class TaskList:
             result = dict()
             result['name'] = line.strip()
             result['topics'] = []
-            times = re.findall('\d+[чмhm]|\?[чмhm]', line)
+            times = re.findall('\d+[чмhm]|\?[чмhm]', re.sub('\[.*?\]', '', line))
             if times:
                 time = times[0]
-                result['length'] = get_length(time)
+                result['duration'] = get_duration(time)
             attribute_line = re.findall('\[(.*?)\]', line)
 
             if attribute_line:
@@ -378,11 +392,13 @@ class TaskList:
 
                 for attr in attributes:
                     if looks_like_datetime(attr):
-                        result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')
+                        result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y %H:%M')                        
                     elif looks_like_date(attr):
                         result['at'] = datetime.datetime.strptime(attr, '%d.%m.%Y')
-                    elif looks_like_length(attr):
-                        result['length'] = get_length(attr)              
+                    elif looks_like_spent_time(attr):
+                        result['spent'] = get_duration(attr)
+                    elif looks_like_duration(attr):
+                        result['duration'] = get_duration(attr)              
                     elif looks_like_till_datetime(attr):
                         result['till'] = datetime.datetime.strptime(attr[1:], '%d.%m.%Y %H:%M')
                     elif looks_like_till_date(attr):
@@ -390,16 +406,15 @@ class TaskList:
                     elif looks_like_periodic(attr):
                         periodics.append(Period(attr))
                     elif attr.startswith('$') or attr.startswith("р"):
-
                         result['cost'] = float(attr[2:])
                         result['topics'].append('money')
                     elif looks_like_page_count(attr):
                         page_count = int(attr[:-1])
                         result['topics'].append("books")
                         if "hard" in attributes:
-                            result['length'] = page_count * HARD_PAGE_TIME
+                            result['duration'] = page_count * HARD_PAGE_TIME
                         else:
-                            result['length'] = page_count * EASY_PAGE_TIME
+                            result['duration'] = page_count * EASY_PAGE_TIME
                     else:
                         result['topics'].append(attr)        
                 result['periodics'] = periodics
@@ -441,7 +456,7 @@ class TaskList:
             date_from = datetime.datetime.now()
 
         limited_tasks = [task for task in self.tasks if task.upper_limit is not None and not task.periodics]
-        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.length is not None
+        unbound_tasks = [task for task in self.tasks if task.upper_limit is None and task.duration is not None
                          and not task.periodics]
         limited_tasks.sort(key=lambda task: task.planned_upper_limit(date_from))
 
@@ -454,24 +469,25 @@ class TaskList:
                 result.overdue(task)
             balance += task.planned_upper_limit(date_from) - now
             balance -= self.special_time(now, task.planned_upper_limit(date_from))
-            balance -= datetime.timedelta(hours=task.length)
+            balance -= datetime.timedelta(hours=task.duration_left)
             if balance < datetime.timedelta():
                 result.risky(task)
             now = task.upper_limit
-        result.assigned_time = sum([datetime.timedelta(hours=task.length) for task in limited_tasks], datetime.timedelta())
+        result.assigned_time = sum([datetime.timedelta(hours=task.duration_left) for task in limited_tasks], datetime.timedelta())
         result.balance = balance
-        result.unbound_time = sum([datetime.timedelta(hours=task.length) for task in unbound_tasks], datetime.timedelta())
+        result.unbound_time = sum([datetime.timedelta(hours=task.duration_left) for task in unbound_tasks], datetime.timedelta())
         result.left = (balance - result.unbound_time).total_seconds()/60.0/60
         return result
 
     def check(self, date_from=None):
+        def td_to_hours(td):
+            return round(td.days * 24 + int(float(td.seconds) / 3600) + float(td.seconds % 3600) / 3600, 2)
+
         result = self._check(date_from)
-
-
-        print('Assigned time (how long limited tasks will take):', result.assigned_time)
-        print('Balance (time total balance for limited tasks):', result.balance)
-        print('Unbound time (how long free tasks will take):', result.unbound_time)
-        print('Free time left till latest limited task(Can we do both limited and free tasks?):', result.left)
+        print('Assigned time (how long limited tasks will take):'.rjust(50), td_to_hours(result.assigned_time))
+        print('Balance (time total balance for limited tasks):'.rjust(50), td_to_hours(result.balance))
+        print('Unbound time (how long free tasks will take):'.rjust(50), td_to_hours(result.unbound_time))
+        print('Free time left till latest limited task:'.rjust(50), round(result.left, 2)) # (Can we do both limited and free tasks?)
         if result.left < 0:
             print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited',)
         print()

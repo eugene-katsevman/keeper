@@ -44,7 +44,7 @@ def main():
         if args.unscheduled:
             task_list = [task for task in task_list if not task.upper_limit]
         if args.sort:
-            task_list.sort(key = lambda task : task.length)
+            task_list.sort(key = lambda task: task.duration_left)
             
         if args.australian:
             for t in task_list:
@@ -55,7 +55,7 @@ def main():
             if args.set_attr:
                 task.add_attr_back(args.set_attr)
         if not args.no_total:
-            print ("Total: ", len(task_list), "task(s), ", sum([task.length for task in task_list if task.length]), "h of worktime")
+            print ("Total: ", len(task_list), "task(s), ", sum([task.duration_left for task in task_list if task.duration_left]), "h of worktime")
 
     def today(arg):
         for task in taskpool.today():
@@ -97,7 +97,7 @@ def main():
         for task in sample:
             print (task)
         if not args.no_total:
-            print ("Total: ", sum([task.length for task in sample if task.length]), "h of worktime")
+            print ("Total: ", sum([task.duration_left for task in sample if task.duration_left]), "h of worktime")
 
     def edit(arg):
         if args.filenames:
@@ -137,7 +137,7 @@ def main():
     parser_list.add_argument("topic", nargs="*")
     parser_list.add_argument("--no-total", action="store_true", help = "do not count total work hours")
     parser_list.add_argument("--unscheduled", action="store_true", help = "show unscheduled tasks only")
-    parser_list.add_argument("--sort", action="store_true", help = "sort output by length")
+    parser_list.add_argument("--sort", action="store_true", help = "sort output by duration_left")
     parser_list.add_argument("--australian", action="store_true", help = "accomodate for Australian nature")
     parser_list.add_argument("--set_attr", help = "set custom attr")
     parser_list.set_defaults(func=list_topic, topic = None)

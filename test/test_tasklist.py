@@ -27,7 +27,8 @@ class TaskListTestCase(TestCase):
         tasklist = TaskList()
         task = tasklist.task_from_line('one 4h [<02.01.2015]')
         tasklist.add_task(task)
-        task2 = tasklist.task_from_line('one 4h [+00:00, 21h]')
+        task2 = tasklist.task_from_line('two [+00:00, 21h]')
+        self.assertEqual(task2.duration, 21)
         tasklist.add_task(task2)
         result = tasklist._check(date_from=datetime(2015, 1, 1))
         self.assertEqual(result._overdue, [])
@@ -60,8 +61,12 @@ class TaskListTestCase(TestCase):
         self.assertEqual(result.unbound_time, timedelta())
         self.assertEqual(result.balance, timedelta(hours=-2))
 
-
     def test_timed_task(self):
         tasklist = TaskList()
         task = tasklist.task_from_line('overdue 4ч [<03.01.2015]')
-        self.assertEqual(task.length, 4)
+        self.assertEqual(task.duration, 4)
+
+    def test_spent_time(self):
+        tasklist = TaskList()
+        task = tasklist.task_from_line('spent 4h [spent 1h]')
+        self.assertEqual(task.duration_left, 3)

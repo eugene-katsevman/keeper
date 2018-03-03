@@ -476,19 +476,22 @@ class TaskList:
         result.assigned_time = sum([datetime.timedelta(hours=task.duration_left) for task in limited_tasks], datetime.timedelta())
         result.balance = balance
         result.unbound_time = sum([datetime.timedelta(hours=task.duration_left) for task in unbound_tasks], datetime.timedelta())
-        result.left = (balance - result.unbound_time).total_seconds()/60.0/60
+        result.left = balance - result.unbound_time
         return result
 
     def check(self, date_from=None):
         def td_to_hours(td):
+            """
+            :type td: timedelta
+            """
             return round(td.days * 24 + int(float(td.seconds) / 3600) + float(td.seconds % 3600) / 3600, 2)
 
         result = self._check(date_from)
         print('Assigned time (how long limited tasks will take):'.rjust(50), td_to_hours(result.assigned_time))
         print('Balance (time total balance for limited tasks):'.rjust(50), td_to_hours(result.balance))
         print('Unbound time (how long free tasks will take):'.rjust(50), td_to_hours(result.unbound_time))
-        print('Free time left till latest limited task:'.rjust(50), round(result.left, 2)) # (Can we do both limited and free tasks?)
-        if result.left < 0:
+        print('Free time left till latest limited task:'.rjust(50), td_to_hours(result.left)) # (Can we do both limited and free tasks?)
+        if result.left.total_seconds() < 0:
             print('You\'re short of time. Either limit some unbound tasks, or postpone some of limited',)
         print()
         if not result._overdue and not result._risky:

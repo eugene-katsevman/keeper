@@ -2,3 +2,4 @@
 lists
 .idea
 venv
+.coverage

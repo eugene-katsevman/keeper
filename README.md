@@ -1,6 +1,5 @@
-
 # Keeper
-An extensible console tool for long-term planning, written in Python 2.7 for Linux-based OS. Windows support is still experimental.
+*Keeper* is an extensible console tool for time budgeting and long-term planning.
 
 Keeper's main purpose is to tell if you have enough time at your hands.
 
@@ -56,19 +55,27 @@ which means you're probably in a very bad situation and you should act!
 - [Scheduling](#scheduling)
 - [TODO file example](#todo-file-example)
 
-# Install
-To install Keeper and start using it:
-* download or clone it
-* create `lists` subdir in keeper's directory
-* alias `keeper.py` with something shorter or make a link from `~/bin`. Below I assume you have aliased it as `keeper`.
-   
-From now on, you might start using it.
+# Installation
+
+```bash
+   pip install git+https://github.com/eugene-katsevman/keeper.git
+```
+
+# Layout and setting up
+
+Keeper will create `.keeper` folder in your home dir to store all of its todo files.
+Also, .keeperrc could be created manually to alter its settings like preferred editor or ignored tags list.
+
 # Basic usage
 Here is th simplest use case:
+
 ```bash
 keeper edit main
 ```
-Keeper should start a `gedit` session for `lists/main.todo` file. `*.todo` files are task specification files. To check how this works, let's put this line into `main.todo` and then save it.
+
+Keeper will open an editor session for `~.keeper/main.todo` file. 
+
+`*.todo` files are task specification files. To check how this works, put this line into the `main.todo` and then save it.
 
     My first task
 

@@ -15,10 +15,7 @@ DURATION_GETTER = operator.attrgetter('duration_left')
 
 
 def get_taskpool():
-    lists_dir = tasks.get_dir()
-    tasks.mkdir_p(lists_dir)
-    taskpool = tasks.load_all()
-    return taskpool
+    return tasks.load_all()
 
 
 def check(args):
@@ -135,6 +132,9 @@ def main():
     """
     Entrypoint
     """
+    # check and create app directory if necessary
+    tasks.mkdir_p(settings.APP_DIRECTORY)
+
     parser = argparse.ArgumentParser(description='console timekeeper')
     subparsers = parser.add_subparsers()
     parser_check = subparsers.add_parser('check',

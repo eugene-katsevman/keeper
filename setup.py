@@ -4,11 +4,11 @@
 import os
 import sys
 
+
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-
 
 
 if sys.argv[-1] == 'publish':
@@ -18,7 +18,6 @@ if sys.argv[-1] == 'publish':
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     readme = f.read()
-
 
 
 classifiers = [
@@ -31,6 +30,7 @@ classifiers = [
         'Programming Language :: Python :: 3.5',
         'Topic :: Office/Business :: Scheduling',
 ]
+
 
 setup(
     name='keeper',

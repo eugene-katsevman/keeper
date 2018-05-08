@@ -91,16 +91,28 @@ def find_first_editor():
     raise RuntimeError('No editor found. Please configure one in .keeperrc')
 
 
-
 def edit(args):
-    filenames = args.filenames or '*'
-    full_filenames = [fn+'.todo' for fn in filenames]
+    """
+    open files from args using editor from settings or found by `find_first_editor`
+
+    :type args: argparse.Namespace
+    :param args: filenames to open
+    """
+    filenames = args.filenames or ['*']
+    full_filenames = [fn if fn.endswith('.todo') else '%s.todo' % fn for fn in filenames]
+
     if not settings.EDITOR or settings.EDITOR == 'auto':
         editor = find_first_editor()
     else:
         editor = settings.EDITOR
-    os.system(editor + " " +
-              " ".join([os.path.join(settings.APP_DIRECTORY, fn) for fn in full_filenames]))
+
+    files_to_open = [os.path.join(settings.APP_DIRECTORY, fn) for fn in full_filenames]
+    command_str = "{editor} {files_to_open_str}".format(
+        editor=editor,
+        files_to_open_str = " ".join(files_to_open)
+    )
+
+    os.system(command_str)
 
 
 def show_topics(args):
@@ -137,6 +149,8 @@ def main():
 
     parser = argparse.ArgumentParser(description='console timekeeper')
     subparsers = parser.add_subparsers()
+
+    # `check` subcommand
     parser_check = subparsers.add_parser('check',
                                          help='Quick check current '
                                               'scheduled tasks')
@@ -146,6 +160,7 @@ def main():
                                              help='Show scheduled tasks')
     parser_scheduled.set_defaults(func=scheduled)
 
+    # `list` subcommand
     parser_list = subparsers.add_parser('list', help='List all tasks')
     parser_list.add_argument("topic", nargs="*")
     parser_list.add_argument("--no-total", action="store_true",
@@ -157,9 +172,11 @@ def main():
     parser_list.add_argument("--set_attr", help="set custom attr")
     parser_list.set_defaults(func=list_topic, topic=None)
 
+    # `today` subcommand
     parser_today = subparsers.add_parser('today', help='Lists tasks for today')
     parser_today.set_defaults(func=today)
 
+    # `random` subcommand
     parser_random = subparsers.add_parser('random',
                                           help='Show ten random tasks')
     parser_random.add_argument("--no-total", action="store_true",
@@ -167,17 +184,20 @@ def main():
 
     parser_random.set_defaults(func=random_tasks)
 
+    # `edit` subcommand - open .todo files using editor from settings
     parser_edit = subparsers.add_parser('edit',
-                                        help='start default system editor'
-                                             ' for all todo files')
+                                        help='open specified .todo files using editor set in .keeperrc. '
+                                             'Pass "*" to open all .todo files')
     parser_edit.add_argument("filenames", nargs="*")
     parser_edit.set_defaults(func=edit)
 
+    # `topics` subcommand
     parser_topics = subparsers.add_parser('topics',
                                           help='show topic list '
                                                'and some stats')
     parser_topics.set_defaults(func=show_topics)
 
+    # `done` subcommand
     parser_done = subparsers.add_parser('done',
                                         help='mark file as done')
     parser_done.add_argument("files", nargs="+",

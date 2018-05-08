@@ -83,11 +83,16 @@ def random_tasks(args):
 
 
 def find_first_editor():
-    editors_to_try = ['xed', 'gedit', 'vim', 'nano', 'emacs']
-    for editor in editors_to_try:
+    """
+    :raises: RuntimeError
+    :rtype: str
+    :return: first installed editor from the `settings.POSSIBLE_EDITORS` list
+    """
+    for editor in settings.POSSIBLE_EDITORS:
         if 0 == subprocess.call(['which', editor]):
             return editor
-    raise Exception('No editor found. Please configure one in .keeperrc')
+    raise RuntimeError('No editor found. Please configure one in .keeperrc')
+
 
 
 def edit(args):
@@ -98,7 +103,7 @@ def edit(args):
     else:
         editor = settings.EDITOR
     os.system(editor + " " +
-              " ".join([tasks.get_dir()+fn for fn in full_filenames]))
+              " ".join([os.path.join(settings.APP_DIRECTORY, fn) for fn in full_filenames]))
 
 
 def show_topics(args):
@@ -111,17 +116,17 @@ def show_topics(args):
 
 
 def done(args):
-    lists_dir = tasks.get_dir()
+    lists_dir = settings.APP_DIRECTORY
     for filename in args.files:
-        _from, _to = lists_dir+filename+".todo", lists_dir+filename+".done"
+        _from, _to = os.path.join(lists_dir, filename + ".done"), os.path.join(lists_dir, filename + ".todo")
         print("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 
 
 def undo(args):
-    lists_dir = tasks.get_dir()
+    lists_dir = settings.APP_DIRECTORY
     for filename in args.files:
-        _from, _to = lists_dir+filename+".done", lists_dir+filename+".todo"
+        _from, _to = os.path.join(lists_dir, filename + ".done"), os.path.join(lists_dir, filename + ".todo")
         print("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 

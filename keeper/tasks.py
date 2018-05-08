@@ -6,7 +6,7 @@ import os.path
 import errno
 import timespans
 
-from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS
+from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS, APP_DIRECTORY
 
 strptime = datetime.datetime.strptime
 ONE_DAY = datetime.timedelta(days=1)
@@ -28,10 +28,6 @@ def set_line(filename, lineno, line):
     data[lineno] = line + '\n'
     with open(filename, 'w') as file:
         file.writelines(data)
-
-
-def get_dir():
-    return os.path.expanduser('~/.keeper')+'/'
 
 
 def get_duration(s):
@@ -557,8 +553,8 @@ class TaskList:
 
 def load_all():
     task_pool = TaskList()
-    lists_dir = get_dir()
+    lists_dir = APP_DIRECTORY
     for filename in os.listdir(lists_dir):
         if filename.endswith('.todo'):
-            task_pool.load_from_file(lists_dir+filename)
+            task_pool.load_from_file(os.path.join(lists_dir, filename))
     return task_pool

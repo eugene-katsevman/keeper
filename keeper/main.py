@@ -29,13 +29,16 @@ def find_first_editor():
     raise RuntimeError('No editor found. Please configure one in .keeperrc')
 
 
-@click.group(help='Console timekeeper')
-def main():
+@click.group(help='Console timekeeper', invoke_without_command=True)
+@click.pass_context
+def main(ctx):
     """
     Entrypoint
     """
     # check and create app directory if necessary
     tasks.mkdir_p(settings.APP_DIRECTORY)
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(check)
 
 
 @main.command(help='open specified .todo files using'

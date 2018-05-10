@@ -142,7 +142,7 @@ Any attribute not recognised as special (like _deadline_ or _periodics_, or dura
 
     keeper list must
 
-*.todo file names are tags too. Command `keeper list asdf` will return all tasks from asdf.todo along with all tasks from topic `asdf` and all other tasks marked by `asdf` tag (like **[asdf]**).
+`*.todo` file names are tags too. Command `keeper list asdf` will return all tasks from asdf.todo along with all tasks from topic `asdf` and all other tasks marked by `asdf` tag (like **[asdf]**).
 
 # AND queries
 To list all tasks, simultaneously having several taks, we should provide a dot-separated list of these tags to `keeper list`:

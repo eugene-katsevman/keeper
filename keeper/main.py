@@ -1,9 +1,8 @@
 #!env python
 
 
+import click
 import os
-import sys
-import argparse
 import random
 import operator
 import subprocess
@@ -18,67 +17,6 @@ def get_taskpool():
     return tasks.load_all()
 
 
-def check(args):
-    get_taskpool().check()
-
-
-def scheduled(args):
-    get_taskpool().scheduled()
-
-
-def total_duration(task_list):
-    durations = filter(None, map(DURATION_GETTER, task_list))
-    return sum(durations)
-
-
-def list_topic(args):
-    taskpool = get_taskpool()
-    if not args.topic:
-        task_list = taskpool.tasks
-    else:
-        task_list = []
-        topic_list_or = [set(topic.split('.')) for topic in args.topic]
-        for topic_list_and in topic_list_or:
-            if topic_list_and.intersection(settings.IGNORED_SECTIONS):
-                src_list = taskpool.special_tasks
-            else:
-                src_list = taskpool.tasks
-            for task in src_list:
-                if set(task.topics).issuperset(topic_list_and):
-                    task_list.append(task)
-
-    task_list = [task for task in task_list if not task.periodics]
-
-    if args.unscheduled:
-        task_list = [task for task in task_list if not task.upper_limit]
-    if args.sort:
-        task_list.sort(key=DURATION_GETTER)
-
-    for task in task_list:
-        print(task)
-        if args.set_attr:
-            task.add_attr_back(args.set_attr)
-    if not args.no_total:
-        total = total_duration(task_list)
-        print("Total: ", len(task_list), "task(s), ", total, "h of worktime")
-
-
-def today(args):
-    for task in get_taskpool().today():
-        print(task)
-
-
-def random_tasks(args):
-    task_list = [task for task in get_taskpool().tasks
-                 if not task.periodics and not task.upper_limit]
-
-    sample = random.sample(task_list, 10)
-    for task in sample:
-        print(task)
-    if not args.no_total:
-        print("Total: ", total_duration(sample), "h of worktime")
-
-
 def find_first_editor():
     """
     :raises: RuntimeError
@@ -91,133 +29,150 @@ def find_first_editor():
     raise RuntimeError('No editor found. Please configure one in .keeperrc')
 
 
-def edit(args):
+@click.group(help='Console timekeeper', invoke_without_command=True)
+@click.pass_context
+def main(ctx):
     """
-    open files from args using editor from settings or found by `find_first_editor`
+    Entrypoint
+    """
+    # check and create app directory if necessary
+    tasks.mkdir_p(settings.APP_DIRECTORY)
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(check)
 
-    :type args: argparse.Namespace
-    :param args: filenames to open
+
+@main.command(help='open specified .todo files using'
+                   ' editor set in .keeperrc. ')
+@click.argument('filenames', nargs=-1)
+def edit(filenames):
     """
-    filenames = args.filenames or ['*']
-    full_filenames = [fn if fn.endswith('.todo') else '%s.todo' % fn for fn in filenames]
+    open files from filenames using editor from settings or
+    found by `find_first_editor`
+
+    :type filenames: argparse.Namespace
+    :param filenames: filenames to open
+    """
+    filenames = filenames or ['*']
+    full_filenames = [fn if fn.endswith('.todo')
+                      else '%s.todo' % fn for fn in filenames]
 
     if not settings.EDITOR or settings.EDITOR == 'auto':
         editor = find_first_editor()
     else:
         editor = settings.EDITOR
 
-    files_to_open = [os.path.join(settings.APP_DIRECTORY, fn) for fn in full_filenames]
+    files_to_open = [os.path.join(settings.APP_DIRECTORY, fn)
+                     for fn in full_filenames]
     command_str = "{editor} {files_to_open_str}".format(
         editor=editor,
-        files_to_open_str = " ".join(files_to_open)
+        files_to_open_str=" ".join(files_to_open)
     )
 
     os.system(command_str)
 
 
-def show_topics(args):
+@main.command(help='Quick check current scheduled tasks')
+def check():
+    get_taskpool().check()
+
+
+@main.command(help='Show scheduled tasks')
+def scheduled():
+    get_taskpool().scheduled()
+
+
+def total_duration(task_list):
+    durations = filter(None, map(DURATION_GETTER, task_list))
+    return sum(durations)
+
+
+@main.command(help='List tasks', name='list')
+@click.argument("topics", nargs=-1)
+@click.option('--no-total', is_flag=True, help='Do not count total'
+              ' work hours')
+@click.option('--unscheduled', is_flag=True,
+              help='Show unscheduled tasks only')
+@click.option('--sort', is_flag=True, help='Sort output by duration_left')
+def list_topic(topics, no_total, unscheduled, sort):
+    taskpool = get_taskpool()
+    if not topics:
+        task_list = taskpool.tasks
+    else:
+        task_list = []
+        topic_list_or = [set(topic.split('.')) for topic in topics]
+        for topic_list_and in topic_list_or:
+            if topic_list_and.intersection(settings.IGNORED_SECTIONS):
+                src_list = taskpool.special_tasks
+            else:
+                src_list = taskpool.tasks
+            for task in src_list:
+                if set(task.topics).issuperset(topic_list_and):
+                    task_list.append(task)
+
+    task_list = [task for task in task_list if not task.periodics]
+
+    if unscheduled:
+        task_list = [task for task in task_list if not task.upper_limit]
+    if sort:
+        task_list.sort(key=DURATION_GETTER)
+
+    for task in task_list:
+        click.echo(task)
+    if not no_total:
+        total = total_duration(task_list)
+        click.echo("Total: {} tasks(s), {}h of worktim".format(len(task_list),
+                                                               total))
+
+
+@main.command(help='Lists tasks for today')
+def today():
+    for task in get_taskpool().today():
+        click.echo(task)
+
+
+@main.command(help='Show ten random tasks', name='random')
+@click.option('--no-total', is_flag=True, help='do not output total worktime')
+def random_tasks(no_total):
+    task_list = [task for task in get_taskpool().tasks
+                 if not task.periodics and not task.upper_limit]
+    sample = random.sample(task_list, 10)
+    for task in sample:
+        click.echo(task)
+    if not no_total:
+        click.echo("Total: {}h of worktime".format(total_duration(sample)))
+
+
+@main.command(help='List all available topics')
+def show_topics():
     taskpool = get_taskpool()
     all_tasks = taskpool.tasks + taskpool.special_tasks
     topics = list(set.union(*[set(task.topics) for task in all_tasks]))
     topics.sort()
     for topic in topics:
-        print(topic)
+        click.echo(topic)
 
 
-def done(args):
+@main.command(help='Rename [filename].todo to [filename].done\n')
+@click.argument('filenames', nargs=-1)
+def done(filenames):
     lists_dir = settings.APP_DIRECTORY
-    for filename in args.files:
-        _from, _to = os.path.join(lists_dir, filename + ".done"), os.path.join(lists_dir, filename + ".todo")
-        print("moving {} to {}".format(_from, _to))
+    for filename in filenames:
+        _from = os.path.join(lists_dir,
+                             filename + ".done")
+        _to = os.path.join(lists_dir, filename + ".todo")
+        click.echo("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 
 
-def undo(args):
+@main.command(help='Rename [filename].done to [filename].todo\n')
+@click.argument('filenames', nargs=-1)
+def undo(filenames):
     lists_dir = settings.APP_DIRECTORY
-    for filename in args.files:
-        _from, _to = os.path.join(lists_dir, filename + ".done"), os.path.join(lists_dir, filename + ".todo")
-        print("moving {} to {}".format(_from, _to))
+    for filename in filenames:
+        _from = os.path.join(lists_dir, filename + ".done")
+        _to = os.path.join(lists_dir, filename + ".todo")
+        click.echo("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
-
-
-def main():
-    """
-    Entrypoint
-    """
-    # check and create app directory if necessary
-    tasks.mkdir_p(settings.APP_DIRECTORY)
-
-    parser = argparse.ArgumentParser(description='console timekeeper')
-    subparsers = parser.add_subparsers()
-
-    # `check` subcommand
-    parser_check = subparsers.add_parser('check',
-                                         help='Quick check current '
-                                              'scheduled tasks')
-    parser_check.set_defaults(func=check)
-
-    parser_scheduled = subparsers.add_parser('scheduled',
-                                             help='Show scheduled tasks')
-    parser_scheduled.set_defaults(func=scheduled)
-
-    # `list` subcommand
-    parser_list = subparsers.add_parser('list', help='List all tasks')
-    parser_list.add_argument("topic", nargs="*")
-    parser_list.add_argument("--no-total", action="store_true",
-                             help="do not count total work hours")
-    parser_list.add_argument("--unscheduled", action="store_true",
-                             help="show unscheduled tasks only")
-    parser_list.add_argument("--sort", action="store_true",
-                             help="sort output by duration_left")
-    parser_list.add_argument("--set_attr", help="set custom attr")
-    parser_list.set_defaults(func=list_topic, topic=None)
-
-    # `today` subcommand
-    parser_today = subparsers.add_parser('today', help='Lists tasks for today')
-    parser_today.set_defaults(func=today)
-
-    # `random` subcommand
-    parser_random = subparsers.add_parser('random',
-                                          help='Show ten random tasks')
-    parser_random.add_argument("--no-total", action="store_true",
-                               help="do not count total work hours")
-
-    parser_random.set_defaults(func=random_tasks)
-
-    # `edit` subcommand - open .todo files using editor from settings
-    parser_edit = subparsers.add_parser('edit',
-                                        help='open specified .todo files using editor set in .keeperrc. '
-                                             'Pass "*" to open all .todo files')
-    parser_edit.add_argument("filenames", nargs="*")
-    parser_edit.set_defaults(func=edit)
-
-    # `topics` subcommand
-    parser_topics = subparsers.add_parser('topics',
-                                          help='show topic list '
-                                               'and some stats')
-    parser_topics.set_defaults(func=show_topics)
-
-    # `done` subcommand
-    parser_done = subparsers.add_parser('done',
-                                        help='mark file as done')
-    parser_done.add_argument("files", nargs="+",
-                             help="file names to be marked as done")
-    parser_done.set_defaults(func=done)
-
-    parser_undo = subparsers.add_parser('undo',
-                                        help='revert done file to todo')
-    parser_undo.add_argument("files", nargs="+",
-                             help="done file names to be reverted")
-    parser_undo.set_defaults(func=undo)
-
-    if len(sys.argv) < 2:
-        args = parser.parse_args(['check'])
-    elif sys.argv[1] == "current":
-        args = parser.parse_args(['list', 'current'])
-    else:
-        args = parser.parse_args()
-
-    args.func(args)
 
 
 if __name__ == '__main__':

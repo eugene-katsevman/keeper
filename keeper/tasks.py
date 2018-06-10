@@ -3,10 +3,12 @@ import os
 import re
 import datetime
 import os.path
-import errno
 import timespans
 
-from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME, IGNORED_SECTIONS, APP_DIRECTORY
+from keeper.settings import (HARD_PAGE_TIME,
+                             EASY_PAGE_TIME,
+                             IGNORED_SECTIONS,
+                             APP_DIRECTORY)
 
 strptime = datetime.datetime.strptime
 ONE_DAY = datetime.timedelta(days=1)
@@ -430,6 +432,12 @@ class TaskList:
                     elif attr.startswith('$') or attr.startswith("р"):
                         result['cost'] = float(attr[2:])
                         result['topics'].append('money')
+                    elif attr == 'today':
+                        today_date = datetime.datetime.now().date()
+                        today_datetime = datetime.datetime.combine(today_date,
+                                                             datetime.time(0))
+                        tomorrow = today_datetime + ONE_DAY
+                        result['till'] = tomorrow
                     elif looks_like_page_count(attr):
                         page_count = int(attr[:-1])
                         result['topics'].append("books")

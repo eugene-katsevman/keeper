@@ -34,7 +34,7 @@ classifiers = [
 
 setup(
     name='keeper',
-    version='0.2.1',
+    version='0.3.0',
     description='Keeper the console time management tool',
     long_description=readme,
     packages=['keeper'],

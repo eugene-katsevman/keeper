@@ -158,8 +158,8 @@ def done(filenames):
     lists_dir = settings.APP_DIRECTORY
     for filename in filenames:
         _from = os.path.join(lists_dir,
-                             filename + ".done")
-        _to = os.path.join(lists_dir, filename + ".todo")
+                             filename + ".todo")
+        _to = os.path.join(lists_dir, filename + ".done")
         click.echo("moving {} to {}".format(_from, _to))
         os.rename(_from, _to)
 

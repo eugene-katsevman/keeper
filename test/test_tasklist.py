@@ -1,6 +1,6 @@
 from unittest import TestCase
 from datetime import datetime,timedelta
-from keeper.tasks import TaskList, Task
+from keeper.tasks import TaskList
 
 
 class TaskListTestCase(TestCase):

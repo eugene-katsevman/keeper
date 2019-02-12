@@ -338,19 +338,21 @@ class CheckResult:
 
 
 class TaskList:
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, stream=None):
         self.tasks = []
         self.special_tasks = []
+        if stream:
+            self.load_from_stream(stream)
         if filename:
             self.load_from_file(filename)
 
-    def load_from_file(self, filename):
+    def load_from_stream(self, stream, filename=None):
+        sections_stack = []
         current_section = None
         section_attributes = dict()
         in_comment = False
-        for lineno, line in enumerate(open(filename).readlines()):
+        for lineno, line in enumerate(stream.readlines()):
             line = line.rstrip()
-
             if line:
                 if in_comment and "*/" in line:
                     in_comment = False
@@ -369,6 +371,7 @@ class TaskList:
                     current_section = re.sub(r'\[.*\]', '', current_section)
                     current_section = re.sub(r'[ ]+', ' ',
                                              current_section.strip())
+                    sections_stack.append(current_section)
                 else:
                     if not line.startswith(' ') and not line.startswith('\t'):
                         current_section = None
@@ -389,6 +392,10 @@ class TaskList:
 
                     task = Task(**attributes)
                     self.add_task(task)
+
+    def load_from_file(self, filename):
+        with open(filename) as f:
+            self.load_from_stream(filename=filename)
 
     def add_task(self, task):
         if not set(task.topics).intersection(set(IGNORED_SECTIONS)):

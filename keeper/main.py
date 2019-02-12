@@ -7,14 +7,16 @@ import random
 import operator
 import subprocess
 
-from keeper import tasks, settings
-
+from keeper import settings, utils
+from keeper.settings import APP_DIRECTORY
+from keeper.tasklist import TaskList
+from keeper.source import TaskSource
 
 DURATION_GETTER = operator.attrgetter('duration_left')
 
 
 def get_taskpool():
-    return tasks.load_all()
+    return load_all()
 
 
 def find_first_editor():
@@ -36,7 +38,7 @@ def main(ctx):
     Entrypoint
     """
     # check and create app directory if necessary
-    tasks.mkdir_p(settings.APP_DIRECTORY)
+    utils.mkdir_p(settings.APP_DIRECTORY)
     if ctx.invoked_subcommand is None:
         ctx.invoke(check)
 
@@ -205,3 +207,14 @@ def undo(filenames):
 
 if __name__ == '__main__':
     main()
+
+
+def load_all():
+    task_pool = TaskList()
+    lists_dir = APP_DIRECTORY
+    for filename in os.listdir(lists_dir):
+        if filename.endswith('.todo'):
+            real_filename = os.path.join(lists_dir, filename)
+            source = TaskSource(filename=real_filename)
+            task_pool.add_source(source)
+    return task_pool

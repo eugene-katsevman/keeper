@@ -1,5 +1,5 @@
-from unittest import TestCase
-from keeper.tasks import TaskList, Task
+from keeper.tasklist import TaskList
+from keeper.source import TaskSource
 import io
 
 import pytest
@@ -18,7 +18,7 @@ task1
 
 task8
     """)
-    tasklist = TaskList(filename='test/somefile', stream=data)
+    tasklist = TaskList(task_source=TaskSource(filename='test/somefile', stream=data))
     task1 = tasklist.find_task('task1')
     assert task1.children
     assert len(task1.children) == 2
@@ -56,7 +56,7 @@ task8
 ])
 def test_find_first(spec, expected_todo):
     data = io.StringIO(spec)
-    tasklist = TaskList(filename='test/somefile', stream=data)
+    tasklist = TaskList(task_source=TaskSource(filename='somefile', stream=data))
     task6 = tasklist.find_task(expected_todo)
     todo = tasklist.find_first_to_do()
     assert task6 == todo

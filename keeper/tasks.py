@@ -92,7 +92,7 @@ def days(datefrom, dateto):
         datenow += datetime.timedelta(days=1)
 
 
-class Period(object):
+class Period:
     def __init__(self, specification=None, task=None):
 
         self.specification = specification[1:]
@@ -140,8 +140,10 @@ class Period(object):
 class Task:
     def __init__(self, name="", duration=1, topic=None, topics=None,
                  at=None, till=None, periodics=None, cost=None, file=None,
-                 lineno=None, line=None, spent=0):
+                 lineno=None, line=None, spent=0, level=0, parent=None):
+
         self.taskline = TaskLine(line, lineno, file)
+        self.children = []
         self.lineno = lineno
         self.line = line
         self.name = name
@@ -151,7 +153,10 @@ class Task:
         self.file = file
         self.periodics = periodics
         self.spent = spent
-
+        self.level = level
+        self.parent = parent
+        if parent and not self in parent.children:
+            parent.children.append(self)
         if self.periodics:
             for period in self.periodics:
                 period.set_task(self)
@@ -173,6 +178,9 @@ class Task:
             return 'unknown'
         else:
             return str(self.duration) + 'h'
+
+    def is_ignored(self):
+        return set(self.topics).intersection(set(IGNORED_SECTIONS))
 
     @property
     def duration_left(self):
@@ -214,7 +222,7 @@ class Task:
             self.planned_time_to_str())
 
 
-class Attr(object):
+class Attr:
     def __init__(self, location, text):
         self.location = location
         self.text = text
@@ -224,7 +232,7 @@ class Attr(object):
         return str((self.location, self.text, self.value))
 
 
-class AttrCollection(object):
+class AttrCollection:
     def __init__(self, location, text):
         self.text = text
         self.attrs = []
@@ -245,7 +253,7 @@ class AttrCollection(object):
                 len(self.attrs) == 1 and self.attrs[0].value == '')
 
 
-class TaskLine(object):
+class TaskLine:
     """
     bidirectional interface to task as stored in a file
     """
@@ -337,20 +345,26 @@ class CheckResult:
         self._risky.append(task)
 
 
+def get_level(line):
+    return len(line) - len(line.lstrip())
+
+
 class TaskList:
     def __init__(self, filename=None, stream=None):
         self.tasks = []
         self.special_tasks = []
         if stream:
-            self.load_from_stream(stream)
-        if filename:
+            self.load_from_stream(stream, filename=filename)
+        elif filename:
             self.load_from_file(filename)
 
     def load_from_stream(self, stream, filename=None):
-        sections_stack = []
+        task_stack = []
         current_section = None
         section_attributes = dict()
         in_comment = False
+        prev_level, level = 0, 0
+
         for lineno, line in enumerate(stream.readlines()):
             line = line.rstrip()
             if line:
@@ -371,14 +385,15 @@ class TaskList:
                     current_section = re.sub(r'\[.*\]', '', current_section)
                     current_section = re.sub(r'[ ]+', ' ',
                                              current_section.strip())
-                    sections_stack.append(current_section)
                 else:
-                    if not line.startswith(' ') and not line.startswith('\t'):
+                    prev_level, level = level, get_level(line)
+                    if not level:
                         current_section = None
                         section_attributes = dict()
                     attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(self.extract_attributes(line))
+                    attributes['level'] = level
                     attributes['line'] = line
                     attributes['file'] = filename
                     attributes['lineno'] = lineno
@@ -389,19 +404,22 @@ class TaskList:
                         attributes['topics'] += section_attributes['topics']
                     if current_section:
                         attributes['topics'].append(current_section)
-
+                    while task_stack and task_stack[-1].level >= level:
+                        task_stack.pop(-1)
+                    attributes['parent'] = None if not task_stack else task_stack[-1]
                     task = Task(**attributes)
                     self.add_task(task)
+                    task_stack.append(task)
 
     def load_from_file(self, filename):
         with open(filename) as f:
-            self.load_from_stream(filename=filename)
+            self.load_from_stream(stream=f, filename=filename)
 
     def add_task(self, task):
-        if not set(task.topics).intersection(set(IGNORED_SECTIONS)):
-            self.tasks.append(task)
-        else:
+        if task.is_ignored():
             self.special_tasks.append(task)
+        else:
+            self.tasks.append(task)
 
     @staticmethod
     def extract_attributes(line):
@@ -564,6 +582,23 @@ class TaskList:
         limited_tasks.sort(key=lambda task: task.upper_limit)
         for task in limited_tasks:
             print(task)
+
+    def find_task(self, spec):
+        for task in self.tasks:
+            if task.name == spec:
+                return task
+
+    def find_first_to_do(self):
+        def _traverse(children):
+            for child in children:
+                if child.is_ignored():
+                    continue
+                result = _traverse(child.children)
+                if result:
+                    return result
+                return child
+            return None
+        return _traverse(self.tasks)
 
 
 def load_all():

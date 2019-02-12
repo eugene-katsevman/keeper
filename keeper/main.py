@@ -130,6 +130,34 @@ def today():
         click.echo(task)
 
 
+@main.command(help='What to do now')
+def what():
+    click.echo(get_taskpool().find_first_to_do())
+
+
+@main.command(help='Enter workmode')
+def workmode():
+    taskpool = get_taskpool()
+    while True:
+        current = taskpool.find_first_to_do()
+        if not current:
+            break
+        click.echo(current)
+        click.echo('[D]one/[S]plit/[Q]uit')
+        decision = click.getchar()
+        if decision=='q':
+            exit()
+        if decision not in ['d', 's']:
+            click.echo('Unknown command')
+            continue
+        if decision == 'd':
+            current.taskline.add_attr('done')
+            current.taskline.save()
+            current.topics.append('done')
+
+    print("Congrats! You've finished!")
+
+
 @main.command(help='Show ten random tasks', name='random')
 @click.option('--no-total', is_flag=True, help='do not output total worktime')
 def random_tasks(no_total):

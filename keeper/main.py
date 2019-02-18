@@ -146,20 +146,25 @@ def workmode():
         if not current:
             break
         click.echo(current)
-        click.echo('[D]one/[S]plit/[Q]uit/[L]ater')
+        click.echo('[W]tf?/[D]one/[S]plit/[Q]uit/[L]ater')
         decision = click.getchar()
-        decision = {'й':'q', 'в': 'd', 'ы': 's', 'д': 'l'}.get(decision, decision)
+        decision = {'й':'q', 'в': 'd', 'ы': 's', 'д': 'l', 'ц':'w'}.get(decision, decision)
         if decision == 'q':
             exit()
-        if decision not in ['d', 's', 'l']:
+        if decision not in ['d', 's', 'l', 'w']:
             click.echo('Unknown command')
             continue
         if decision == 'd':
             current.source.add_attr('done')
             current.source.save()
             current.topics.append('done')
-        if decision == 'l':
+        elif decision == 'l':
             last_task = current
+        elif decision == 'w':
+            c = current
+            while c.parent:
+                print("Because of", c.parent)
+                c = c.parent
         elif decision == 's':
             click.echo('Print new task, finish with empty line:')
             appended_level = get_level(current.source.line) + 1

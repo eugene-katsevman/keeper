@@ -1,6 +1,5 @@
 #!env python
 
-
 import click
 import os
 import random
@@ -9,8 +8,9 @@ import subprocess
 
 from keeper import settings, utils
 from keeper.settings import APP_DIRECTORY
+from keeper.task import Task
 from keeper.tasklist import TaskList
-from keeper.source import TaskSource
+from keeper.source import TaskSource, get_level, TaskLine, extract_attributes
 
 DURATION_GETTER = operator.attrgetter('duration_left')
 
@@ -140,23 +140,44 @@ def what():
 @main.command(help='Enter workmode')
 def workmode():
     taskpool = get_taskpool()
+    last_task = None
     while True:
-        current = taskpool.find_first_to_do()
+        current = taskpool.find_first_to_do(last_task)
         if not current:
             break
         click.echo(current)
-        click.echo('[D]one/[S]plit/[Q]uit')
+        click.echo('[D]one/[S]plit/[Q]uit/[L]ater')
         decision = click.getchar()
-        if decision=='q':
+        decision = {'й':'q', 'в': 'd', 'ы': 's', 'д': 'l'}.get(decision, decision)
+        if decision == 'q':
             exit()
-        if decision not in ['d', 's']:
+        if decision not in ['d', 's', 'l']:
             click.echo('Unknown command')
             continue
         if decision == 'd':
-            current.taskline.add_attr('done')
-            current.taskline.save()
+            current.source.add_attr('done')
+            current.source.save()
             current.topics.append('done')
-
+        if decision == 'l':
+            last_task = current
+        elif decision == 's':
+            click.echo('Print new task, finish with empty line:')
+            appended_level = get_level(current.source.line) + 1
+            append_after = current.source
+            while True:
+                line = input()
+                if not line:
+                    break
+                line = ' ' * appended_level + line
+                source_line = TaskLine(line, 0, current.source.filename, current.source.source)
+                attributes = extract_attributes(line)
+                attributes['parent'] = current
+                attributes['source'] = source_line
+                new_task = Task(**attributes)
+                current.source.source.add_task(new_task)
+                current.source.source.insert_after(source_line, append_after)
+                append_after = source_line
+                current.source.save()
     print("Congrats! You've finished!")
 
 

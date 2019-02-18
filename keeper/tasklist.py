@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 import datetime
+import itertools
+
 import timespans
 
 from keeper.source import TaskSource
@@ -153,14 +155,27 @@ class TaskList:
             if task.name == spec:
                 return task
 
-    def find_first_to_do(self):
+    def find_first_to_do(self, last=None):
         def _traverse(children):
             for child in children:
-                if child.is_ignored():
+                if child.is_ignored() or child.periodics:
                     continue
-                result = _traverse(child.children)
-                if result:
-                    return result
-                return child
-            return None
-        return _traverse(self.tasks)
+
+                result = list(_traverse(child.children))
+                if not result:
+                    yield child
+                else:
+                    yield from result
+
+        top_level = [t for t in self.tasks if not t.parent]
+
+        result = _traverse(top_level)
+        if not last:
+            return next(result)
+        else:
+            try:
+                result = itertools.dropwhile(lambda x: x != last, result)
+                next(result)
+                return next(result)
+            except StopIteration:
+                return next(_traverse(self.tasks))

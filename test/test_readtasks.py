@@ -27,7 +27,7 @@ task8
     assert len(task2.children) == 3
 
 
-@pytest.mark.parametrize('spec,expected_todo', [
+@pytest.mark.parametrize('spec,last,expected_todo', [
     ("""
 task1
  task2 [done]
@@ -39,7 +39,7 @@ task1
   task7 [done]
 
 task8
-        """, 'task6'),
+        """, None, 'task6'),
 
     ("""
     task1
@@ -52,12 +52,20 @@ task8
       task7
     
     task8
-        """, 'task7'),
+    """, None, 'task7'),
+    ("""
+    task1
+     task3
+    task9
+        """, 'task3', 'task9'),
 ])
-def test_find_first(spec, expected_todo):
+def test_find_first(spec, last, expected_todo):
     data = io.StringIO(spec)
     tasklist = TaskList(task_source=TaskSource(filename='somefile', stream=data))
+    if last:
+        last = tasklist.find_task(last)
     task6 = tasklist.find_task(expected_todo)
-    todo = tasklist.find_first_to_do()
+    todo = tasklist.find_first_to_do(last=last)
+
     assert task6 == todo
 

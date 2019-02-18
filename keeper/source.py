@@ -70,8 +70,49 @@ def is_number(s):
     except ValueError:
         return False
 
+class Attr:
+    def __init__(self, location, text):
+        self.location = location
+        self.text = text
+        self.value = text.strip()
 
-class TaskLine:
+    def __repr__(self):
+        return str((self.location, self.text, self.value))
+
+
+class AttrCollection:
+    def __init__(self, location, text):
+        self.text = text
+        self.attrs = []
+        index = 0
+        self.location = location
+        while index < len(text):
+            next_index = text.find(',', index)
+            if next_index == -1:
+                next_index = len(text)
+            self.attrs.append(Attr(location + index, text[index:next_index]))
+            index = next_index + 1
+
+    def __repr__(self):
+        return str(self.attrs)
+
+    def is_empty(self):
+        return (self.attrs == [] or
+                len(self.attrs) == 1 and self.attrs[0].value == '')
+
+
+class SourceLine:
+    def _parse(self):
+        pass
+
+    def __init__(self, line, lineno, filename):
+        self.line = line
+        self.lineno = lineno
+        self.filename = filename
+        self._parse()
+
+
+class TaskLine(SourceLine):
     """
     bidirectional interface to task as stored in a file
     """
@@ -92,10 +133,11 @@ class TaskLine:
     def pure_name(self):
         return re.sub(r'\[.*?\]', '', self.line)
 
-    def __init__(self, line, lineno, filename):
+    def __init__(self, line, lineno, filename, source=None):
         self.line = line
         self.lineno = lineno
         self.filename = filename
+        self.source = source
         self._parse()
 
     def __str__(self):
@@ -144,38 +186,7 @@ class TaskLine:
         self._parse()
 
     def save(self):
-        set_line(self.filename, self.lineno, self.line)
-
-
-class Attr:
-    def __init__(self, location, text):
-        self.location = location
-        self.text = text
-        self.value = text.strip()
-
-    def __repr__(self):
-        return str((self.location, self.text, self.value))
-
-
-class AttrCollection:
-    def __init__(self, location, text):
-        self.text = text
-        self.attrs = []
-        index = 0
-        self.location = location
-        while index < len(text):
-            next_index = text.find(',', index)
-            if next_index == -1:
-                next_index = len(text)
-            self.attrs.append(Attr(location + index, text[index:next_index]))
-            index = next_index + 1
-
-    def __repr__(self):
-        return str(self.attrs)
-
-    def is_empty(self):
-        return (self.attrs == [] or
-                len(self.attrs) == 1 and self.attrs[0].value == '')
+        self.source.save()
 
 
 def task_from_line(line):
@@ -260,10 +271,12 @@ def extract_attributes(line):
 
 TaskTuple = namedtuple('TaskTuple', 'level task')
 
+
 class TaskSource:
     def __init__(self, filename=None, stream=None):
         self.tasks = []
         self.special_tasks = []
+        self.lines = []
         self.filename = filename
         if stream:
             self.load_from_stream(stream, filename=filename)
@@ -276,9 +289,9 @@ class TaskSource:
         section_attributes = dict()
         in_comment = False
         prev_level, level = 0, 0
-
-        for lineno, line in enumerate(stream.readlines()):
-            line = line.rstrip()
+        self.lines = [SourceLine(line.rstrip(), line_no, filename) for line_no, line in enumerate(stream.readlines())]
+        for lineno, source_line in enumerate(self.lines):
+            line = source_line.line
             if line:
                 if in_comment and "*/" in line:
                     in_comment = False
@@ -301,31 +314,46 @@ class TaskSource:
                     if not level:
                         current_section = None
                         section_attributes = dict()
+
+                    taskline = TaskLine(line, lineno, filename, source=self)
                     attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(extract_attributes(line))
                     attributes['topic'] = current_section
                     attributes['topics'] += \
                         [os.path.basename(filename).split('.')[0]]
-                    if 'topics' in section_attributes:
-                        attributes['topics'] += section_attributes['topics']
+
+                    attributes['topics'] += section_attributes.get('topics', [])
                     if current_section:
                         attributes['topics'].append(current_section)
-                    taskline = TaskLine(line, lineno, filename)
+
                     attributes['source'] = taskline
                     while task_stack and task_stack[-1].level >= level:
                         task_stack.pop(-1)
                     attributes['parent'] = None if not task_stack else task_stack[-1].task
+
                     task = Task(**attributes)
+
                     self.add_task(task)
+                    self.lines[lineno] = taskline
                     task_stack.append(TaskTuple(level=level, task=task))
 
     def load_from_file(self, filename):
         with open(filename) as f:
             self.load_from_stream(stream=f, filename=filename)
 
+    def save(self):
+        with open(self.filename, 'w') as f:
+            f.writelines(source_line.line + '\n' for source_line in self.lines)
+
     def add_task(self, task):
         if task.is_ignored():
             self.special_tasks.append(task)
         else:
             self.tasks.append(task)
+
+    def insert_after(self, line, after):
+        line.lineno = after.lineno + 1
+        for other_line in self.lines[after.lineno+1:]:
+            other_line.lineno += 1
+        self.lines.insert(after.lineno + 1, line)

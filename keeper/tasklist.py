@@ -29,9 +29,9 @@ class TaskList:
         if task_source:
             self.add_source(task_source)
 
-    def add_task(self, task):
+    def add_task(self, task, first=False):
         source = None if not task.source else task.source.filename
-        self.sources[source].add_task(task)
+        self.sources[source].add_task(task, first=first)
 
     def add_source(self, source):
         self.sources[source.filename] = source

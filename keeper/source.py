@@ -346,14 +346,26 @@ class TaskSource:
         with open(self.filename, 'w') as f:
             f.writelines(source_line.line + '\n' for source_line in self.lines)
 
-    def add_task(self, task):
+    def add_task(self, task, first=False):
         if task.is_ignored():
-            self.special_tasks.append(task)
+            if not first:
+                self.special_tasks.append(task)
+            else:
+                self.special_tasks.insert(0, task)
         else:
-            self.tasks.append(task)
+            if not first:
+                self.tasks.append(task)
+            else:
+                self.tasks.insert(0, task)
 
     def insert_after(self, line, after):
         line.lineno = after.lineno + 1
         for other_line in self.lines[after.lineno+1:]:
             other_line.lineno += 1
         self.lines.insert(after.lineno + 1, line)
+
+    def insert_before(self, line, before):
+        line.lineno = before.lineno
+        for other_line in self.lines[before.lineno:]:
+            other_line.lineno += 1
+        self.lines.insert(line.lineno, line)

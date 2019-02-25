@@ -148,10 +148,10 @@ def workmode():
         click.echo(current)
         click.echo('[W]tf?/[D]one/[S]plit/[Q]uit/[L]ater')
         decision = click.getchar()
-        decision = {'й':'q', 'в': 'd', 'ы': 's', 'д': 'l', 'ц':'w'}.get(decision, decision)
+        decision = {'й':'q', 'в': 'd', 'ы': 's', 'д': 'l', 'ц': 'w', 'и': 'b'}.get(decision, decision)
         if decision == 'q':
             exit()
-        if decision not in ['d', 's', 'l', 'w']:
+        if decision not in ['d', 's', 'l', 'w', 'b']:
             click.echo('Unknown command')
             continue
         if decision == 'd':
@@ -165,6 +165,22 @@ def workmode():
             while c.parent:
                 print("Because of", c.parent)
                 c = c.parent
+        elif decision == 'b':
+            click.echo('Print new task, finish with empty line:')
+            appended_level = get_level(current.source.line)
+            append_before = current.source
+            line = input()
+            if line:
+                line = ' ' * appended_level + line
+                source_line = TaskLine(line, 0, current.source.filename, current.source.source)
+                attributes = extract_attributes(line)
+                attributes['parent'] = current.parent
+                attributes['source'] = source_line
+                new_task = Task(**attributes)
+                current.source.source.add_task(new_task, first=True)
+                current.source.source.insert_before(source_line, append_before)
+                current.source.save()
+
         elif decision == 's':
             click.echo('Print new task, finish with empty line:')
             appended_level = get_level(current.source.line) + 1

@@ -38,7 +38,7 @@ setup(
     description='Keeper the console time management tool',
     long_description=readme,
     packages=['keeper'],
-    install_requires=['timespans'],
+    install_requires=['timespans', 'click'],
     author='Eugene Katsevman',
     author_email='python@chrisstreeter.com',
     url='https://github.com/eugene-katsevman/keeper',

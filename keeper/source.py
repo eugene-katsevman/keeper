@@ -70,7 +70,11 @@ def is_number(s):
     except ValueError:
         return False
 
-class Attr:
+
+class Attribute:
+    """
+    Single attribute inside [] brackets
+    """
     def __init__(self, location, text):
         self.location = location
         self.text = text
@@ -80,18 +84,29 @@ class Attr:
         return str((self.location, self.text, self.value))
 
 
-class AttrCollection:
+class Attributes:
+    """
+    A collection of comma-separated attributes inside [] brackets
+    """
     def __init__(self, location, text):
+        """
+        Split attributes into separate Attr classes
+        :param location: where collection starts in the line
+        :param text: what lies between the brackets
+        """
         self.text = text
         self.attrs = []
-        index = 0
         self.location = location
+        index = 0
         while index < len(text):
             next_index = text.find(',', index)
             if next_index == -1:
                 next_index = len(text)
-            self.attrs.append(Attr(location + index, text[index:next_index]))
+            self.attrs.append(Attribute(location + index, text[index:next_index]))
             index = next_index + 1
+
+    def __getitem__(self, item):
+        return self.attrs[item]
 
     def __repr__(self):
         return str(self.attrs)
@@ -100,15 +115,18 @@ class AttrCollection:
         return (self.attrs == [] or
                 len(self.attrs) == 1 and self.attrs[0].value == '')
 
+    def __bool__(self):
+        return not self.is_empty()
 
 class SourceLine:
+    """
+    Single source file representation
+    """
     def _parse(self):
         pass
 
-    def __init__(self, line, lineno, filename):
+    def __init__(self, line):
         self.line = line
-        self.lineno = lineno
-        self.filename = filename
         self._parse()
 
 
@@ -126,19 +144,16 @@ class TaskLine(SourceLine):
         while index != -1:
             end_index = self.line.find(']', index)
             self.attr_collections.append(
-                AttrCollection(index+1, self.line[index+1:end_index]))
+                Attributes(index + 1, self.line[index + 1:end_index]))
             index = self.line.find('[', end_index)
 
     @property
     def pure_name(self):
         return re.sub(r'\[.*?\]', '', self.line)
 
-    def __init__(self, line, lineno, filename, source=None):
-        self.line = line
-        self.lineno = lineno
-        self.filename = filename
+    def __init__(self, line, source=None):
+        SourceLine.__init__(self, line)
         self.source = source
-        self._parse()
 
     def __str__(self):
         return "{} with attr collections ({})".format(self.line,
@@ -289,7 +304,7 @@ class TaskSource:
         section_attributes = dict()
         in_comment = False
         prev_level, level = 0, 0
-        self.lines = [SourceLine(line.rstrip(), line_no, filename) for line_no, line in enumerate(stream.readlines())]
+        self.lines = [SourceLine(line.rstrip()) for line in stream.readlines()]
         for lineno, source_line in enumerate(self.lines):
             line = source_line.line
             if line:
@@ -315,7 +330,7 @@ class TaskSource:
                         current_section = None
                         section_attributes = dict()
 
-                    taskline = TaskLine(line, lineno, filename, source=self)
+                    taskline = TaskLine(line, source=self)
                     attributes = dict()
                     attributes.update(section_attributes)
                     attributes.update(extract_attributes(line))
@@ -359,13 +374,9 @@ class TaskSource:
                 self.tasks.insert(0, task)
 
     def insert_after(self, line, after):
-        line.lineno = after.lineno + 1
-        for other_line in self.lines[after.lineno+1:]:
-            other_line.lineno += 1
-        self.lines.insert(after.lineno + 1, line)
+        line.source = self
+        self.lines.insert(after + 1, line)
 
     def insert_before(self, line, before):
-        line.lineno = before.lineno
-        for other_line in self.lines[before.lineno:]:
-            other_line.lineno += 1
-        self.lines.insert(line.lineno, line)
+        line.source = self
+        self.lines.insert(before, line)

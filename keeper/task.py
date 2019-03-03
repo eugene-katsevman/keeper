@@ -77,8 +77,9 @@ class Task:
         return self.__unicode__()
 
     def __unicode__(self):
+        filename = self.source.source.filename
         return '<{}> [{}] {} [{}]'.format(
-            os.path.splitext(os.path.basename(self.source.filename))[0],
+            os.path.splitext(os.path.basename(filename))[0],
             self.topic, self.name, self.planned_time_to_str())
 
     def __repr__(self):

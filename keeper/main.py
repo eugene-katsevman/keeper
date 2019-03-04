@@ -54,7 +54,13 @@ def edit(filenames):
     :type filenames: argparse.Namespace
     :param filenames: filenames to open
     """
-    filenames = filenames or ['*']
+    if not filenames:
+        # check if ANY file exists within dir
+        w = os.walk(settings.APP_DIRECTORY)
+        path, attrs, files = next(w)
+        exists = any(file.endswith('.todo') for file in files)
+        filenames = ['*'] if exists else ['main']
+
     full_filenames = [fn if fn.endswith('.todo')
                       else '%s.todo' % fn for fn in filenames]
 
@@ -65,6 +71,7 @@ def edit(filenames):
 
     files_to_open = [os.path.join(settings.APP_DIRECTORY, fn)
                      for fn in full_filenames]
+
     command_str = "{editor} {files_to_open_str}".format(
         editor=editor,
         files_to_open_str=" ".join(files_to_open)

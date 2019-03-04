@@ -49,7 +49,7 @@ those tools could not tell if there is enough time left to finish those tasks in
 
 As a result, this instrument was created.
 
-And I know about `org-mode`, I know it is good at what it does, but I just like
+And I know about `org-mode`, I know it is good in what it does, but I just like
 my own solution better:)
 
 # Install

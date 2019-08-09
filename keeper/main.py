@@ -1,20 +1,22 @@
 #!env python
 
-
 import click
 import os
 import random
 import operator
 import subprocess
 
-from keeper import tasks, settings
-
+from keeper import settings, utils
+from keeper.settings import APP_DIRECTORY
+from keeper.task import Task
+from keeper.tasklist import TaskList
+from keeper.source import TaskSource, get_level, TaskLine, extract_attributes
 
 DURATION_GETTER = operator.attrgetter('duration_left')
 
 
 def get_taskpool():
-    return tasks.load_all()
+    return load_all()
 
 
 def find_first_editor():
@@ -36,7 +38,7 @@ def main(ctx):
     Entrypoint
     """
     # check and create app directory if necessary
-    tasks.mkdir_p(settings.APP_DIRECTORY)
+    utils.mkdir_p(settings.APP_DIRECTORY)
     if ctx.invoked_subcommand is None:
         ctx.invoke(check)
 
@@ -52,7 +54,13 @@ def edit(filenames):
     :type filenames: argparse.Namespace
     :param filenames: filenames to open
     """
-    filenames = filenames or ['*']
+    if not filenames:
+        # check if ANY file exists within dir
+        w = os.walk(settings.APP_DIRECTORY)
+        path, attrs, files = next(w)
+        exists = any(file.endswith('.todo') for file in files)
+        filenames = ['*'] if exists else ['main']
+
     full_filenames = [fn if fn.endswith('.todo')
                       else '%s.todo' % fn for fn in filenames]
 
@@ -63,6 +71,7 @@ def edit(filenames):
 
     files_to_open = [os.path.join(settings.APP_DIRECTORY, fn)
                      for fn in full_filenames]
+
     command_str = "{editor} {files_to_open_str}".format(
         editor=editor,
         files_to_open_str=" ".join(files_to_open)
@@ -130,6 +139,98 @@ def today():
         click.echo(task)
 
 
+@main.command(help='What to do now')
+def what():
+    click.echo(get_taskpool().find_first_to_do())
+
+
+def prepend(task, line):
+    appended_level = get_level(task.source.line)
+    line = ' ' * appended_level + line
+    source_line = TaskLine(line)
+    attributes = extract_attributes(line)
+    attributes['parent'] = task.parent
+    attributes['source'] = source_line
+    new_task = Task(**attributes)
+    task.source.source.add_task(new_task, first=True)
+    append_before = task.source.source.lines.index(task.source)
+    task.source.source.insert_before(source_line, append_before)
+    task.source.save()
+
+
+def mark_done(current):
+    current.source.add_attr('done')
+    current.source.save()
+    current.topics.append('done')
+
+
+def add_child(current, line):
+    last_task = current
+    while last_task.children:
+        last_task = last_task.children[-1]
+    append_after = current.source.source.lines.index(last_task.source)
+
+    appended_level = get_level(current.source.line) + 1
+    line = ' ' * appended_level + line
+    source_line = TaskLine(line)
+    attributes = extract_attributes(line)
+    attributes['parent'] = current
+    attributes['source'] = source_line
+    new_task = Task(**attributes)
+    current.source.source.add_task(new_task)
+    current.source.source.insert_after(source_line, append_after)
+    append_after = source_line
+    current.source.save()
+
+
+@main.command(help='Enter workmode')
+def workmode():
+    taskpool = get_taskpool()
+    last_task = None
+    while True:
+        current = taskpool.find_first_to_do(last_task)
+        if not current:
+            break
+        click.echo(current)
+        click.echo('[W]tf?/[D]one/[S]plit/[Q]uit/[L]ater/Add [B]efore')
+        decision = click.getchar()
+        decision = {'й': 'q',
+                    'в': 'd',
+                    'ы': 's',
+                    'д': 'l',
+                    'ц': 'w',
+                    'и': 'b'}.get(decision, decision)
+        if decision == 'q':
+            exit()
+        if decision not in ['d', 's', 'l', 'w', 'b']:
+            click.echo('Unknown command')
+            continue
+        if decision == 'd':
+            mark_done(current)
+        elif decision == 'l':
+            last_task = current
+        elif decision == 'w':
+            c = current
+            while c.parent:
+                print("Because of", c.parent)
+                c = c.parent
+        elif decision == 'b':
+            click.echo('Print new task, finish with empty line:')
+            line = input()
+            if line:
+                prepend(current, line)
+
+        elif decision == 's':
+            click.echo('Print new task, finish with empty line:')
+            while True:
+                line = input()
+                if line:
+                    add_child(current, line)
+                else:
+                    break
+    print("Congrats! You've finished!")
+
+
 @main.command(help='Show ten random tasks', name='random')
 @click.option('--no-total', is_flag=True, help='do not output total worktime')
 def random_tasks(no_total):
@@ -177,3 +278,14 @@ def undo(filenames):
 
 if __name__ == '__main__':
     main()
+
+
+def load_all():
+    task_pool = TaskList()
+    lists_dir = APP_DIRECTORY
+    for filename in os.listdir(lists_dir):
+        if filename.endswith('.todo'):
+            real_filename = os.path.join(lists_dir, filename)
+            source = TaskSource(filename=real_filename)
+            task_pool.add_source(source)
+    return task_pool

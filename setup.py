@@ -26,7 +26,6 @@ classifiers = [
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Topic :: Office/Business :: Scheduling',
 ]
@@ -34,15 +33,15 @@ classifiers = [
 
 setup(
     name='keeper',
-    version='0.3.0',
+    version='0.4.0',
     description='Keeper the console time management tool',
     long_description=readme,
     packages=['keeper'],
-    install_requires=['timespans'],
+    install_requires=['timespans', 'click'],
     author='Eugene Katsevman',
-    author_email='python@chrisstreeter.com',
+    author_email='eugene.katsevman@gmail.com',
     url='https://github.com/eugene-katsevman/keeper',
     license='GPL3+',
     classifiers=classifiers,
-    entry_points={'console_scripts':['keeper = keeper.main:main']}
+    entry_points={'console_scripts': ['keeper = keeper.main:main']}
 )

@@ -1,3 +1,4 @@
+import os
 from keeper import settings
 from keeper.source import get_level, TaskLine, extract_attributes
 from keeper.task import Task
@@ -51,5 +52,4 @@ def add_child(current: Task, line: str):
     new_task = Task(**attributes)
     current.source.source.add_task(new_task)
     current.source.source.insert_after(source_line, append_after)
-    append_after = source_line
     current.source.save()

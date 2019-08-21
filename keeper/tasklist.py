@@ -1,11 +1,12 @@
 # -*- coding:utf-8 -*-
 import datetime
 import itertools
+import typing
 
 import timespans
 
 from keeper.source import TaskSource
-
+from keeper.task import Task
 
 class CheckResult:
     def __init__(self):
@@ -23,13 +24,47 @@ class CheckResult:
         self._risky.append(task)
 
 
+class VirtualRoot(Task):
+    def __init__(self, tasklist: "TaskList"):
+        self.source = None
+        self.tasklist = tasklist
+        self.name = None
+        self.duration = None
+        self.topic = None
+        self.cost = None
+        self.periodics = None
+        self.spent = None
+        self.parent = None
+        self.topics = []
+        self.at = None
+        self.till = None
+        self.upper_limit = None
+
+    @property
+    def children(self):
+        return self.tasklist.tasks
+
+    def add_child(self, child):
+        self.tasklist.add_task(child)
+
+    def __str__(self):
+        return self.__unicode__()
+
+    def __unicode__(self):
+        return 'virtual root'
+
+
 class TaskList:
     def __init__(self, task_source=None):
         self.sources = {None: TaskSource()}
         if task_source:
             self.add_source(task_source)
 
-    def add_task(self, task, first=False):
+    @property
+    def root(self):
+        return VirtualRoot(self)
+
+    def add_task(self, task: Task, first=False):
         source = None if not task.source else task.source.filename
         self.sources[source].add_task(task, first=first)
 
@@ -37,7 +72,7 @@ class TaskList:
         self.sources[source.filename] = source
 
     @property
-    def tasks(self):
+    def tasks(self) -> typing.List[Task]:
         tasks = []
         for s in self.sources.values():
             tasks.extend(s.tasks)

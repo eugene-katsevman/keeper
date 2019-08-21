@@ -1,6 +1,7 @@
 from datetime import datetime,timedelta
 from keeper.tasklist import TaskList
 from keeper.source import task_from_line
+from keeper.common import add_child
 
 
 def test_simple():
@@ -70,6 +71,10 @@ def test_timed_task():
     assert task.duration == 4
 
 
-def test_spent_time():
-    task = task_from_line('spent 4h [spent 1h]')
-    assert task.duration_left == 3
+def test_task_root():
+    root = TaskList().root
+
+    root.add_child(task_from_line('spent 4h [spent 1h]'))
+    root.add_child(task_from_line('spent 4h [spent 1h]'))
+
+    assert len(root.children) == 2

@@ -21,8 +21,8 @@ class Task:
         self.periodics = periodics
         self.spent = spent
         self.parent = parent
-        if parent and not self in parent.children:
-            parent.children.append(self)
+        if parent:
+            parent.add_child(self)
 
         self.topics = topics or []
         if topic and not topics:
@@ -38,6 +38,10 @@ class Task:
             self.upper_limit = self.at
         elif self.till is not None:
             self.upper_limit = self.till
+
+    def add_child(self, child):
+        if child not in self.children:
+            self.children.append(child)
 
     def planned_time_to_str(self):
         if self.duration is None:

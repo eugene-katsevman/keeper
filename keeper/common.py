@@ -1,5 +1,19 @@
+from keeper import settings
 from keeper.source import get_level, TaskLine, extract_attributes
 from keeper.task import Task
+from keeper.tasklist import TaskList
+from keeper.source import TaskSource
+
+
+def load_all():
+    task_pool = TaskList()
+    lists_dir = settings.APP_DIRECTORY
+    for filename in os.listdir(lists_dir):
+        if filename.endswith('.todo'):
+            real_filename = os.path.join(lists_dir, filename)
+            source = TaskSource(filename=real_filename)
+            task_pool.add_source(source)
+    return task_pool
 
 
 def prepend(task: Task, line: str):

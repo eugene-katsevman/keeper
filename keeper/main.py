@@ -7,16 +7,10 @@ import operator
 import subprocess
 
 from keeper import settings, utils
-from keeper.common import add_child, mark_done, prepend
-from keeper.tasklist import TaskList
-from keeper.source import TaskSource
+from keeper import common
 
 
 DURATION_GETTER = operator.attrgetter('duration_left')
-
-
-def get_taskpool():
-    return load_all()
 
 
 def find_first_editor():
@@ -82,12 +76,12 @@ def edit(filenames):
 
 @main.command(help='Quick check current scheduled tasks')
 def check():
-    get_taskpool().check()
+    common.load_all().check()
 
 
 @main.command(help='Show scheduled tasks')
 def scheduled():
-    get_taskpool().scheduled()
+    common.load_all().scheduled()
 
 
 def total_duration(task_list):
@@ -103,7 +97,7 @@ def total_duration(task_list):
               help='Show unscheduled tasks only')
 @click.option('--sort', is_flag=True, help='Sort output by duration_left')
 def list_topic(topics, no_total, unscheduled, sort):
-    taskpool = get_taskpool()
+    taskpool = common.load_all()
     if not topics:
         task_list = taskpool.tasks
     else:
@@ -135,18 +129,18 @@ def list_topic(topics, no_total, unscheduled, sort):
 
 @main.command(help='Lists tasks for today')
 def today():
-    for task in get_taskpool().today():
+    for task in common.load_all().today():
         click.echo(task)
 
 
 @main.command(help='What to do now')
 def what():
-    click.echo(get_taskpool().find_first_to_do())
+    click.echo(common.load_all().find_first_to_do())
 
 
 @main.command(help='Enter workmode')
 def workmode():
-    taskpool = get_taskpool()
+    taskpool = common.load_all()
     last_task = None
     while True:
         current = taskpool.find_first_to_do(last_task)
@@ -167,7 +161,7 @@ def workmode():
             click.echo('Unknown command')
             continue
         if decision == 'd':
-            mark_done(current)
+            common.mark_done(current)
         elif decision == 'l':
             last_task = current
         elif decision == 'w':
@@ -179,14 +173,14 @@ def workmode():
             click.echo('Print new task, finish with empty line:')
             line = input()
             if line:
-                prepend(current, line)
+                common.prepend(current, line)
 
         elif decision == 's':
             click.echo('Print new task, finish with empty line:')
             while True:
                 line = input()
                 if line:
-                    add_child(current, line)
+                    common.add_child(current, line)
                 else:
                     break
     print("Congrats! You've finished!")
@@ -195,7 +189,7 @@ def workmode():
 @main.command(help='Show ten random tasks', name='random')
 @click.option('--no-total', is_flag=True, help='do not output total worktime')
 def random_tasks(no_total):
-    task_list = [task for task in get_taskpool().tasks
+    task_list = [task for task in common.load_all().tasks
                  if not task.periodics and not task.upper_limit]
     sample = random.sample(task_list, 10)
     for task in sample:
@@ -206,7 +200,7 @@ def random_tasks(no_total):
 
 @main.command(help='List all available topics')
 def show_topics():
-    taskpool = get_taskpool()
+    taskpool = common.load_all()
     all_tasks = taskpool.tasks + taskpool.special_tasks
     topics = list(set.union(*[set(task.topics) for task in all_tasks]))
     topics.sort()
@@ -239,14 +233,3 @@ def undo(filenames):
 
 if __name__ == '__main__':
     main()
-
-
-def load_all():
-    task_pool = TaskList()
-    lists_dir = settings.APP_DIRECTORY
-    for filename in os.listdir(lists_dir):
-        if filename.endswith('.todo'):
-            real_filename = os.path.join(lists_dir, filename)
-            source = TaskSource(filename=real_filename)
-            task_pool.add_source(source)
-    return task_pool

@@ -21,7 +21,7 @@ class Task:
         self.periodics = periodics
         self.spent = spent
         self.parent = parent
-        if parent and not self in parent.children:
+        if parent and self not in parent.children:
             parent.children.append(self)
 
         self.topics = topics or []
@@ -46,7 +46,7 @@ class Task:
             return str(self.duration) + 'h'
 
     def is_ignored(self):
-        return set(self.topics).intersection(set(IGNORED_SECTIONS))
+        return set(self.topics).intersection(IGNORED_SECTIONS)
 
     @property
     def duration_left(self):
@@ -66,7 +66,7 @@ class Task:
         for period in self.periodics:
             for day in days(start.date() - ONE_DAY,
                             end.date() + ONE_DAY):
-                if period.has_day(day):
+                if not period.specs or period.has_day(day):
                     spans.append(period.get_timespan_for_day(day))
         spanset = (timespans.TimeSpanSet(spans)
                    - timespans.TimeSpanSet(timespans.TimeSpan(None, start))
@@ -74,9 +74,6 @@ class Task:
         return spanset
 
     def __str__(self):
-        return self.__unicode__()
-
-    def __unicode__(self):
         filename = self.source.source.filename
         return '<{}> [{}] {} [{}]'.format(
             os.path.splitext(os.path.basename(filename))[0],
@@ -98,12 +95,7 @@ class Period:
     def set_task(self, task):
         self.task = task
 
-    def has_day(self, day):
-        """
-        :type day:datetime.date
-        :param day:
-        :return:
-        """
+    def has_day(self, day: datetime.date) -> bool:
         DAYS = [
             ['понедельник', 'monday'],
             ['вторник', 'tuesday'],
@@ -113,8 +105,7 @@ class Period:
             ['суббота', 'saturday'],
             ['воскресенье', 'sunday']
         ]
-        result = not self.specs or \
-            any(d in self.specs for d in DAYS[day.weekday()])
+        result = any(d in self.specs for d in DAYS[day.weekday()])
         return result
 
     def get_timespan_for_day(self, day):

@@ -1,16 +1,18 @@
 import datetime
 import os
 import re
-from collections import namedtuple
+import typing
 
 from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME
+
 from keeper.task import Task, Period
+
 from keeper.utils import ONE_DAY
 
 strptime = datetime.datetime.strptime
 
 
-def set_line(filename, lineno, line):
+def set_line(filename: str, lineno: int, line: str):
     with open(filename, 'r') as file:
         data = file.readlines()
     data[lineno] = line + '\n'
@@ -18,7 +20,7 @@ def set_line(filename, lineno, line):
         file.writelines(data)
 
 
-def get_duration(s):
+def get_duration(s: str):
     if '?' in s:
         return None
     elif s.endswith('h') or s.endswith('ч'):
@@ -27,43 +29,43 @@ def get_duration(s):
         return float(re.findall(r'\d*\.?\d+', s)[0]) / 60
 
 
-def looks_like_date(s):
+def looks_like_date(s: str):
     return [] != re.findall(r'^\d\d?\.\d\d?\.\d\d\d\d', s)
 
 
-def looks_like_datetime(s):
+def looks_like_datetime(s: str):
     return [] != re.findall(r'^\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
 
 
-def looks_like_time(s):
+def looks_like_time(s: str):
     return [] != re.findall(r'^\d\d?:\d\d?', s)
 
 
-def looks_like_till_datetime(s):
+def looks_like_till_datetime(s: str):
     return [] != re.findall(r'^<\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
 
 
-def looks_like_till_date(s):
+def looks_like_till_date(s: str):
     return [] != re.findall(r'^<\d\d?\.\d\d?\.\d\d\d\d', s)
 
 
-def looks_like_duration(s):
+def looks_like_duration(s: str):
     return [] != re.findall(r'^\w*\d+[hmчм]|\?[hmчм]', s)
 
 
-def looks_like_spent_time(s):
+def looks_like_spent_time(s: str):
     return [] != re.findall(r'spent (\d+[hmчм]|\?[hmчм])', s)
 
 
-def looks_like_periodic(s):
+def looks_like_periodic(s: str):
     return s.startswith("+")
 
 
-def looks_like_page_count(s):
+def looks_like_page_count(s: str):
     return [] != re.findall(r'\d+p', s)
 
 
-def is_number(s):
+def is_number(s: str):
     try:
         int(s)
         return True
@@ -117,6 +119,7 @@ class Attributes:
 
     def __bool__(self):
         return not self.is_empty()
+
 
 class SourceLine:
     """
@@ -228,7 +231,8 @@ def extract_period(attr):
     return Period(start_time, specs)
 
 
-def extract_attributes(line):
+# todo: typed dict
+def extract_attributes(line: str) -> typing.Dict[str, typing.Any]:
     try:
         result = dict()
         result['name'] = line.strip()
@@ -284,7 +288,9 @@ def extract_attributes(line):
         raise Exception("error while parsing {}: {}".format(line, str(e)))
 
 
-TaskTuple = namedtuple('TaskTuple', 'level task')
+class TaskTuple(typing.NamedTuple):
+    level: int
+    task: Task
 
 
 class TaskSource:
@@ -294,11 +300,11 @@ class TaskSource:
         self.lines = []
         self.filename = filename
         if stream:
-            self.load_from_stream(stream, filename=filename)
+            self._load_from_stream(stream, filename=filename)
         elif filename:
-            self.load_from_file(filename)
+            self._load_from_file(filename)
 
-    def load_from_stream(self, stream, filename=None):
+    def _load_from_stream(self, stream, filename=None):
         task_stack = []
         current_section = None
         section_attributes = dict()
@@ -353,9 +359,9 @@ class TaskSource:
                     self.lines[lineno] = taskline
                     task_stack.append(TaskTuple(level=level, task=task))
 
-    def load_from_file(self, filename):
+    def _load_from_file(self, filename):
         with open(filename) as f:
-            self.load_from_stream(stream=f, filename=filename)
+            self._load_from_stream(stream=f, filename=filename)
 
     def save(self):
         with open(self.filename, 'w') as f:

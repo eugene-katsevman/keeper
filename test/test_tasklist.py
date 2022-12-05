@@ -8,8 +8,8 @@ def test_simple():
     task = task_from_line('one 4h')
     tasklist.add_task(task)
     result = tasklist._check(date_from=datetime(2015, 1, 1))
-    assert result._overdue == []
-    assert result._risky == []
+    assert result.overdue == []
+    assert result.risky == []
     assert result.unbound_time == timedelta(hours=4)
 
 
@@ -18,8 +18,8 @@ def test_limited():
     task = task_from_line('one 4h [<02.01.2015]')
     tasklist.add_task(task)
     result = tasklist._check(date_from=datetime(2015, 1, 1))
-    assert result._overdue == []
-    assert result._risky == []
+    assert result.overdue == []
+    assert result.risky == []
     assert result.unbound_time == timedelta(hours=0)
     assert result.balance == timedelta(hours=20)
 
@@ -32,8 +32,8 @@ def test_limited_with_periodics():
     assert task2.duration == 21
     tasklist.add_task(task2)
     result = tasklist._check(date_from=datetime(2015, 1, 1))
-    assert result._overdue == []
-    assert result._risky == [task]
+    assert result.overdue == []
+    assert result.risky == [task]
     assert result.unbound_time == timedelta(hours=0)
     assert result.balance == timedelta(hours=-1)
 
@@ -44,8 +44,8 @@ def test_limited_overdue():
     tasklist.add_task(task)
 
     result = tasklist._check(date_from=datetime(2015, 1, 4))
-    assert result._overdue == [task]
-    assert result._risky == []
+    assert result.overdue == [task]
+    assert result.risky == []
     assert result.unbound_time == timedelta(hours=0)
     assert result.balance == timedelta(hours=0)
 
@@ -59,8 +59,8 @@ def test_limited_risky_overdue():
     tasklist.add_task(task2)
 
     result = tasklist._check(date_from=datetime(2015, 1, 4))
-    assert result._overdue == [task]
-    assert result._risky == [task]
+    assert result.overdue == [task]
+    assert result.risky == [task]
     assert result.unbound_time == timedelta()
     assert result.balance == timedelta(hours=-2)
 

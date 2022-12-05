@@ -1,26 +1,30 @@
 # -*- coding:utf-8 -*-
+import dataclasses
 import datetime
 import itertools
+import typing
+from dataclasses import dataclass
 
 import timespans
 
 from keeper.source import TaskSource
+from keeper.task import Task
 
 
+@dataclass
 class CheckResult:
-    def __init__(self):
-        self._overdue = []
-        self._risky = []
-        self.assigned_time = 0
-        self.balance = 0
-        self.unbound_time = 0
-        self.left = 0
+    overdue: typing.List[Task] = dataclasses.field(default_factory=list)
+    risky: typing.List[Task] = dataclasses.field(default_factory=list)
+    assigned_time: float = 0
+    balance: float = 0
+    unbound_time: float = 0
+    left: int = 0
 
-    def overdue(self, task):
-        self._overdue.append(task)
+    def mark_overdue(self, task):
+        self.overdue.append(task)
 
-    def risky(self, task):
-        self._risky.append(task)
+    def mark_risky(self, task):
+        self.risky.append(task)
 
 
 class TaskList:
@@ -71,7 +75,7 @@ class TaskList:
                 span += t.generate_timespanset(time_from, time_to)
         return span.duration
 
-    def _check(self, date_from=None):
+    def check(self, date_from: typing.Optional[datetime.datetime] = None) -> CheckResult:
         if date_from is None:
             date_from = datetime.datetime.now()
 
@@ -90,13 +94,13 @@ class TaskList:
 
         for task in limited_tasks:
             if task.upper_limit < date_from:
-                result.overdue(task)
+                result.mark_overdue(task)
             balance += task.planned_upper_limit(date_from) - now
             balance -= self.special_time(now,
                                          task.planned_upper_limit(date_from))
             balance -= datetime.timedelta(hours=task.duration_left)
             if balance < datetime.timedelta():
-                result.risky(task)
+                result.mark_risky(task)
             now = task.upper_limit
         result.assigned_time = sum(
             [datetime.timedelta(hours=task.duration_left)
@@ -109,46 +113,10 @@ class TaskList:
         result.left = balance - result.unbound_time
         return result
 
-    def check(self, date_from=None):
-        def td_to_hours(td):
-            """
-            :type td: timedelta
-            """
-            day_hours = td.days * 24
-            full_hours = int(float(td.seconds) / 3600)
-            remaining_hours = float(td.seconds % 3600) / 3600
-            hours = (day_hours + full_hours + remaining_hours)
-            return round(hours, 2)
-
-        result = self._check(date_from)
-        print('Assigned time (how long limited tasks will take):'.ljust(50),
-              td_to_hours(result.assigned_time))
-        print('Balance (time total balance for limited tasks):'.ljust(50),
-              td_to_hours(result.balance))
-        print('Unbound time (how long free tasks will take):'.ljust(50),
-              td_to_hours(result.unbound_time))
-        # (Can we do both limited and free tasks?)
-        print('Free time left till latest limited task:'.ljust(50),
-              td_to_hours(result.left))
-        if result.left.total_seconds() < 0:
-            print('You\'re short of time. Either limit some unbound tasks,'
-                  ' or postpone some of limited',)
-        print()
-        if not result._overdue and not result._risky:
-            print('We\'re good')
-        else:
-            for task in result._overdue:
-                print('OVERDUE', task)
-            for task in result._risky:
-                print('RISKY', task)
-
-    def scheduled(self, date_from=None):
-        if date_from is None:
-            date_from = datetime.datetime.now()
+    def scheduled(self) -> typing.List[Task]:
         limited_tasks = [task for task in self.tasks if task.upper_limit]
         limited_tasks.sort(key=lambda task: task.upper_limit)
-        for task in limited_tasks:
-            print(task)
+        return limited_tasks
 
     def find_task(self, spec):
         for task in self.tasks:

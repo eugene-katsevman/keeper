@@ -1,14 +1,14 @@
 import click
 
-from keeper.source import TaskLine
-from keeper.source import extract_attributes
-from keeper.source import get_level
+from keeper.source.parse_file import TaskLine
+from keeper.source.parse import extract_attributes
+from keeper.source.parse import get_indent_level
 from keeper.task import Task
-from keeper.tasklist import TaskList
+from keeper.taskpool import TaskPool
 
 
 def prepend(task: Task, line: str) -> None:
-    appended_level = get_level(task.source.line)
+    appended_level = get_indent_level(task.source.line)
     line = ' ' * appended_level + line
     source_line = TaskLine(line)
     attributes = extract_attributes(line)
@@ -33,7 +33,7 @@ def add_child(current, line):
         last_task = last_task.children[-1]
     append_after = current.source.source.lines.index(last_task.source)
 
-    appended_level = get_level(current.source.line) + 1
+    appended_level = get_indent_level(current.source.line) + 1
     line = ' ' * appended_level + line
     source_line = TaskLine(line)
     attributes = extract_attributes(line)
@@ -45,7 +45,7 @@ def add_child(current, line):
     current.source.save()
 
 
-def workmode(taskpool: TaskList):
+def workmode(taskpool: TaskPool):
 
     last_task = None
     while True:

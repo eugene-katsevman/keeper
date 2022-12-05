@@ -1,9 +1,9 @@
 import random
 
-from keeper.tasklist import TaskList
+from keeper.taskpool import TaskPool
 
 
-def sortmode(taskpool: TaskList):
+def sortmode(taskpool: TaskPool):
     a = random.choice(taskpool.tasks)
     b = random.choice(taskpool.tasks)
     print(a)

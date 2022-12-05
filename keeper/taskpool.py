@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import timespans
 
-from keeper.source import TaskSource
+from keeper.source.parse_file import TasksSourceFile
 from keeper.task import Task
 
 
@@ -27,9 +27,9 @@ class CheckResult:
         self.risky.append(task)
 
 
-class TaskList:
+class TaskPool:
     def __init__(self, task_source=None):
-        self.sources = {None: TaskSource()}
+        self.sources = {None: TasksSourceFile()}
         if task_source:
             self.add_source(task_source)
 

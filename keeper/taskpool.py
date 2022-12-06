@@ -114,48 +114,6 @@ class TaskPool:
         result.left = balance - result.unbound_time
         return result
 
-    def check2(self, date_from: typing.Optional[datetime.datetime] = None) -> CheckResult:
-        if date_from is None:
-            date_from = datetime.datetime.now()
-
-        limited_tasks = [task for task in self.tasks
-                         if task.upper_limit is not None and
-                         not task.periodics]
-        unbound_tasks = [task for task in self.tasks
-                         if task.upper_limit is None and
-                         task.duration is not None and not task.periodics]
-        limited_tasks.sort(
-            key=lambda task: task.planned_upper_limit(date_from))
-
-        balance = {None: datetime.timedelta()}
-        now = date_from
-        result = CheckResult()
-
-        for task in limited_tasks:
-            if task.upper_limit < date_from:
-                result.mark_overdue(task)
-            # add time till planned finish date
-            balance += task.planned_upper_limit(date_from) - now
-
-            # sub all other periodic pools
-            balance -= self.periodics_duration(now,
-                                               task.planned_upper_limit(date_from))
-            # execute the task till it is done
-            balance -= datetime.timedelta(hours=task.duration_left)
-            if balance < datetime.timedelta():
-                result.mark_risky(task)
-            now = task.upper_limit
-        result.assigned_time = sum(
-            [datetime.timedelta(hours=task.duration_left)
-             for task in limited_tasks],
-            datetime.timedelta())
-        result.balance = balance
-        result.unbound_time = sum([datetime.timedelta(hours=task.duration_left)
-                                   for task in unbound_tasks],
-                                  datetime.timedelta())
-        result.left = balance - result.unbound_time
-        return result
-
     def scheduled(self) -> typing.List[Task]:
         limited_tasks = [task for task in self.tasks if task.upper_limit]
         limited_tasks.sort(key=lambda task: task.upper_limit)

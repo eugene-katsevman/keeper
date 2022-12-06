@@ -1,8 +1,8 @@
 import io
 
-from keeper.source import Attributes
-from keeper.source import TaskLine
-from keeper.source import TaskSource
+from keeper.source.parse import Attributes
+from keeper.source.parse_file import TasksSourceFile
+
 
 def test_attributes():
     attributes = Attributes(10, 'hello,    there   ,    + 10')
@@ -23,7 +23,7 @@ def test_source():
           task3[a1, a2, a3    ,   a4]
         '''
     )
-    source = TaskSource(filename='imaginary', stream=data)
+    source = TasksSourceFile(filename='imaginary', stream=data)
 
     assert len(source.lines) == 5
     assert len(source.tasks) == 2

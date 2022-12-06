@@ -13,8 +13,8 @@ from keeper.utils import days, ONE_DAY
 class Task:
     def __init__(self, source: SourceLine = None, name="", duration=1, topic=None, topics=None,
                  at=None, till=None, periodics=None, cost=None,
-                 spent=0, parent=None):
-
+                 spent=0, parent=None, timepool=None):
+        self.timepool = timepool
         self.source = source
         self.children = []
         self.name = name
@@ -52,11 +52,12 @@ class Task:
     def duration_left(self):
         return self.duration - self.spent
 
-    def planned_upper_limit(self, date_from):
-        if self.upper_limit < date_from:
-            return date_from + datetime.timedelta(hours=self.duration_left)
-        else:
+    def planned_upper_limit(self, date_from: datetime.datetime) -> datetime.datetime:
+        if date_from <= self.upper_limit:
+            # due date is not reached yet
             return self.upper_limit
+        # we are overdue, so we have to postpone finish date
+        return date_from + datetime.timedelta(hours=self.duration_left)
 
     def generate_timespanset(self, start, end):
         if not self.periodics:

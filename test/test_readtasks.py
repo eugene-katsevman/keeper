@@ -5,6 +5,7 @@ import io
 
 import pytest
 
+
 def test_simple():
     data = io.StringIO("""
 task1
@@ -62,7 +63,7 @@ task8
 ])
 def test_find_first(spec, last, expected_todo):
     data = io.StringIO(spec)
-    tasklist = TaskPool(task_source=TaskSource(filename='somefile', stream=data))
+    tasklist = TaskPool(task_source=TasksSourceFile(filename='somefile', stream=data))
     if last:
         last = tasklist.find_task(last)
     task6 = tasklist.find_task(expected_todo)

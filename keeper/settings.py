@@ -8,6 +8,9 @@ EDITOR = 'auto'  # set your preferred editor here or 'auto' to look for editors 
 POSSIBLE_EDITORS = ['xed', 'gedit', 'vim', 'nano', 'emacs']
 
 
+TIME_POOLS = {'work', 'personal'}
+
+
 IGNORED_SECTIONS = {'done', 'debts', 'delegated', 'wontdo', 'library',
                     'scratch', 'optional', 'paid', 'ext', 'external',
                     'extern', 'library', 'passwords'}

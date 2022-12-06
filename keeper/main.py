@@ -118,6 +118,31 @@ def check():
             print('RISKY', task)
 
 
+@main.command(help='Quick check current scheduled tasks with timepools')
+def check2():
+    result = load_all().check2(date_from=None)
+    print('Assigned time (how long limited tasks will take):'.ljust(50),
+          td_to_hours(result.assigned_time))
+    print('Balance (time total balance for limited tasks):'.ljust(50),
+          td_to_hours(result.balance))
+    print('Unbound time (how long free tasks will take):'.ljust(50),
+          td_to_hours(result.unbound_time))
+    # (Can we do both limited and free tasks?)
+    print('Free time left till latest limited task:'.ljust(50),
+          td_to_hours(result.left))
+    if result.left.total_seconds() < 0:
+        print('You\'re short of time. Either limit some unbound tasks,'
+              ' or postpone some of limited',)
+    print()
+    if not result.overdue and not result.risky:
+        print('We\'re good')
+    else:
+        for task in result.overdue:
+            print('OVERDUE', task)
+        for task in result.risky:
+            print('RISKY', task)
+
+
 @main.command(help='Show scheduled tasks')
 def scheduled():
     limited_tasks = load_all().scheduled()

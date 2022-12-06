@@ -67,7 +67,8 @@ class TaskPool:
                 if task.till is not None and
                 task.till <= date] + self.strict_at(date)
 
-    def special_time(self, time_from, time_to):
+    def periodics_duration(self, time_from: datetime.datetime,
+                                 time_to: datetime.datetime) -> datetime.timedelta:
         span = timespans.TimeSpanSet()
 
         for t in self.tasks:
@@ -96,8 +97,50 @@ class TaskPool:
             if task.upper_limit < date_from:
                 result.mark_overdue(task)
             balance += task.planned_upper_limit(date_from) - now
-            balance -= self.special_time(now,
-                                         task.planned_upper_limit(date_from))
+            balance -= self.periodics_duration(now,
+                                               task.planned_upper_limit(date_from))
+            balance -= datetime.timedelta(hours=task.duration_left)
+            if balance < datetime.timedelta():
+                result.mark_risky(task)
+            now = task.upper_limit
+        result.assigned_time = sum(
+            [datetime.timedelta(hours=task.duration_left)
+             for task in limited_tasks],
+            datetime.timedelta())
+        result.balance = balance
+        result.unbound_time = sum([datetime.timedelta(hours=task.duration_left)
+                                   for task in unbound_tasks],
+                                  datetime.timedelta())
+        result.left = balance - result.unbound_time
+        return result
+
+    def check2(self, date_from: typing.Optional[datetime.datetime] = None) -> CheckResult:
+        if date_from is None:
+            date_from = datetime.datetime.now()
+
+        limited_tasks = [task for task in self.tasks
+                         if task.upper_limit is not None and
+                         not task.periodics]
+        unbound_tasks = [task for task in self.tasks
+                         if task.upper_limit is None and
+                         task.duration is not None and not task.periodics]
+        limited_tasks.sort(
+            key=lambda task: task.planned_upper_limit(date_from))
+
+        balance = {None: datetime.timedelta()}
+        now = date_from
+        result = CheckResult()
+
+        for task in limited_tasks:
+            if task.upper_limit < date_from:
+                result.mark_overdue(task)
+            # add time till planned finish date
+            balance += task.planned_upper_limit(date_from) - now
+
+            # sub all other periodic pools
+            balance -= self.periodics_duration(now,
+                                               task.planned_upper_limit(date_from))
+            # execute the task till it is done
             balance -= datetime.timedelta(hours=task.duration_left)
             if balance < datetime.timedelta():
                 result.mark_risky(task)

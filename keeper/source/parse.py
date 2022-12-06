@@ -3,6 +3,7 @@ import re
 import typing
 
 from keeper.settings import HARD_PAGE_TIME, EASY_PAGE_TIME
+from keeper.settings import TIME_POOLS
 
 from keeper.source.abstract import Periodic
 
@@ -188,6 +189,8 @@ def extract_attributes(line: str) -> typing.Dict[str, typing.Any]:
                         result['duration'] = page_count * HARD_PAGE_TIME
                     else:
                         result['duration'] = page_count * EASY_PAGE_TIME
+                elif attr in TIME_POOLS:
+                    result['timepool'] = attr
                 else:
                     result['topics'].append(attr)
             result['periodics'] = periodics

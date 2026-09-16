@@ -14,7 +14,7 @@ Given the following `.todo` file
         do all the work 20h
         so some more work 10h
 
-issuing `keeper check` will give use the following result:
+issuing `keeper check` will give us the following result:
 
     Assigned time (how long limited tasks will take):  31.0
     Balance (time total balance for limited tasks):    -22.91
@@ -88,7 +88,7 @@ To start using *keeper* just run
 keeper edit main
 ```
 
-Keeper will open an editor session for `~.keeper/main.todo` file. 
+Keeper will open an editor session for `~/.keeper/main.todo` file. 
 
 `*.todo` files are task specification files.
 To see how this works, put the following  line into the `main.todo` and then save it.
@@ -160,9 +160,9 @@ The format is +[weekday, [weekday2...]] [HH:MM]. I.e. `sleep [+23:00, 8h]` means
 
 *done*         this taks is done and will not be shown or accounted for unless explicitly queried.
 
-*wontdo*       works line *done*, but has a slightly different meaning. You are not going to finish it.
+*wontdo*       works like *done*, but has a slightly different meaning. You are not going to finish it.
 
-*delegated*, *optional*, *debts*, *library*, *scratch*, *optional*, *paid*, *ext*, *passwords*  These are ignored attributes. Tasks with those attributed will not show up or be accounted unless specifically queried for, like `done` and `wontdo`.
+*delegated*, *optional*, *debts*, *library*, *scratch*, *optional*, *paid*, *ext*, *passwords*  These are ignored attributes. Tasks with those attributes will not show up or be accounted unless specifically queried for, like `done` and `wontdo`.
 
 # Grouping and queries
 The `keeper list` command keeps showing us `None` after the task filename. `None` means our tasks do not belong to any _topic_. Let us fix that now:
@@ -270,7 +270,7 @@ Rename [filename].done back to [filename].todo
 # TODO files format overview
 
 The following is an example of `.todo` file. These files are written as a plain text
-with a little bit of special formatting, which will be explained in the nex section.
+with a little bit of special formatting, which will be explained in the next section.
 
     // this is a comment
     # this is a comment too
@@ -297,7 +297,7 @@ with a little bit of special formatting, which will be explained in the nex sect
         task 3
         task 4
     
-    // There are _special_ topics, which aren't taken into accout when _keeper_ is evaluating your time
+    // There are _special_ topics, which aren't taken into account when _keeper_ is evaluating your time
     // These topics are: done, debts, optional, delegated and some other
     // However, tasks from these topics still could be listed through _keeper list <topic>_ command
     

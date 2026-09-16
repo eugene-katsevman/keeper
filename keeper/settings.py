@@ -13,7 +13,7 @@ TIME_POOLS = {'work', 'personal'}
 
 IGNORED_SECTIONS = {'done', 'debts', 'delegated', 'wontdo', 'library',
                     'scratch', 'optional', 'paid', 'ext', 'external',
-                    'extern', 'library', 'passwords'}
+                    'extern', 'passwords'}
 
 SYNONYMS = {'ext': 'external'}
 

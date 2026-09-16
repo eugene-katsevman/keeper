@@ -164,7 +164,7 @@ def list_topic(topics, no_total, unscheduled, sort):
         click.echo(task)
     if not no_total:
         total = total_duration(task_list)
-        click.echo("Total: {} tasks(s), {}h of worktim".format(len(task_list),
+        click.echo("Total: {} task(s), {}h of worktime".format(len(task_list),
                                                                total))
 
 

@@ -7,7 +7,7 @@ import timespans
 
 class SourceLine:
     """
-    Single source file representation
+    Single source line representation
     """
     def _parse(self):
         pass

@@ -12,41 +12,22 @@ from keeper.utils import ONE_DAY
 strptime = datetime.datetime.strptime
 
 
-def set_line(filename: str, lineno: int, line: str):
-    with open(filename, 'r') as file:
-        data = file.readlines()
-    data[lineno] = line + '\n'
-    with open(filename, 'w') as file:
-        file.writelines(data)
-
-
 def get_duration(s: str):
     if '?' in s:
         return None
-    elif s.endswith('h') or s.endswith('ч'):
-        return float(re.findall(r'\d*\.?\d+', s)[0])
-    elif s.endswith('m') or s.endswith('м'):
-        return float(re.findall(r'\d*\.?\d+', s)[0]) / 60
+    value = float(re.findall(r'\d*\.?\d+', s)[0])
+    return value / 60 if s.endswith(('m', 'м')) else value
 
 
-def looks_like_date(s: str):
-    return [] != re.findall(r'^\d\d?\.\d\d?\.\d\d\d\d', s)
+DATE = re.compile(r'^\d\d?\.\d\d?\.\d\d\d\d')
+DATETIME = re.compile(r'^\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?')
+TIME = re.compile(r'^\d\d?:\d\d?')
+TILL_DATETIME = re.compile(r'^<\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?')
+TILL_DATE = re.compile(r'^<\d\d?\.\d\d?\.\d\d\d\d')
 
 
-def looks_like_datetime(s: str):
-    return [] != re.findall(r'^\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
-
-
-def looks_like_time(s: str):
-    return [] != re.findall(r'^\d\d?:\d\d?', s)
-
-
-def looks_like_till_datetime(s: str):
-    return [] != re.findall(r'^<\d\d?\.\d\d?\.\d\d\d\d\s+\d\d?:\d\d?', s)
-
-
-def looks_like_till_date(s: str):
-    return [] != re.findall(r'^<\d\d?\.\d\d?\.\d\d\d\d', s)
+def matches(pattern, s: str) -> bool:
+    return pattern.search(s) is not None
 
 
 def looks_like_duration(s: str):
@@ -63,14 +44,6 @@ def looks_like_periodic(s: str):
 
 def looks_like_page_count(s: str):
     return [] != re.findall(r'\d+p', s)
-
-
-def is_number(s: str):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
 
 
 class Attribute:
@@ -131,7 +104,7 @@ def extract_periodics(attr) -> Periodic:
     start_time = None
     specs = []
     for part in parts:
-        if looks_like_time(part):
+        if matches(TIME, part):
             start_time = strptime(part, '%H:%M').time()
         else:
             specs.append(part.lower())
@@ -159,17 +132,17 @@ def extract_attributes(line: str) -> typing.Dict[str, typing.Any]:
             periodics = []
 
             for attr in attributes:
-                if looks_like_datetime(attr):
+                if matches(DATETIME, attr):
                     result['at'] = strptime(attr, '%d.%m.%Y %H:%M')
-                elif looks_like_date(attr):
+                elif matches(DATE, attr):
                     result['at'] = strptime(attr, '%d.%m.%Y')
                 elif looks_like_spent_time(attr):
                     result['spent'] = get_duration(attr)
                 elif looks_like_duration(attr):
                     result['duration'] = get_duration(attr)
-                elif looks_like_till_datetime(attr):
+                elif matches(TILL_DATETIME, attr):
                     result['till'] = strptime(attr[1:], '%d.%m.%Y %H:%M')
-                elif looks_like_till_date(attr):
+                elif matches(TILL_DATE, attr):
                     result['till'] = strptime(attr[1:], '%d.%m.%Y')
                 elif looks_like_periodic(attr):
                     periodics.append(extract_periodics(attr))

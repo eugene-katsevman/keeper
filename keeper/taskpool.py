@@ -28,6 +28,12 @@ class CheckResult:
 
 
 class TaskPool:
+    """
+    Aggregates tasks from multiple sources.
+
+    TODO: unfinished. Per-timepool budgets are not implemented yet: `check()`
+    still uses a single time budget instead of splitting time across pools.
+    """
     def __init__(self, task_source=None):
         self.sources = {None: TasksSourceFile()}
         if task_source:

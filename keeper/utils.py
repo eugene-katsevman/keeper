@@ -26,8 +26,4 @@ def td_to_hours(td: datetime.timedelta):
     """
     :type td: timedelta
     """
-    day_hours = td.days * 24
-    full_hours = int(float(td.seconds) / 3600)
-    remaining_hours = float(td.seconds % 3600) / 3600
-    hours = (day_hours + full_hours + remaining_hours)
-    return round(hours, 2)
+    return round(td.total_seconds() / 3600, 2)

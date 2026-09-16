@@ -2,4 +2,7 @@
 lists
 .idea
 venv
+.venv
+keeper.egg-info
+modules.puml
 .coverage
